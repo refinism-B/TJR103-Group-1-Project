@@ -1,7 +1,3 @@
-import pandas as pd
-import os
-import requests
-from bs4 import BeautifulSoup
 import mods.get_pet_hospital_24_hr as get_24
 
 # 設定URL和headers
