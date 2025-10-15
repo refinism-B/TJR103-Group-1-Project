@@ -14,11 +14,7 @@
 
 5. 統一使用 Python 專案管理工具 poetry 進行程式碼管理。
 
-6. 爬蟲進來的資料或第三方提供的 csv 檔，未做 ETL 之前都放入 data/raw 資料夾，經過 ETL 之後，放在 data/processed 資料夾裡，讓原資料與整理後的資料都能夠被保留下來。[待討論]
-
-7. 做完 ETL 的檔案名稱，要在最後面加上 ETL 來表示。
-
-8. 專案目錄中的 **mods** 資料夾中已經建立`__init__.py`檔案，使資料夾成為 python 封包，import 套件時可以直接打`import mods.xxxx as oo`的方式匯入。
+6. 專案目錄中的 **mods** 資料夾中已經建立`__init__.py`檔案，使資料夾成為 python 封包，import 套件時可以直接打`import mods.xxxx as oo`的方式匯入。
 
 
 

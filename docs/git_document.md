@@ -34,10 +34,10 @@
 
 
 
-## Commit Massage 撰寫格式
-- 為了團隊資訊統一且好閱讀，盡量遵循統一的 commit massage 撰寫方式。
+## Commit Message 撰寫格式
+- 為了團隊資訊統一且好閱讀，盡量遵循統一的 commit message 撰寫方式。
 
-- 可以打中文。請認真撰寫不要惡搞或娛樂（commit massage 是會公開的）。
+- 可以打中文。請認真撰寫不要惡搞或娛樂（commit message 是會公開的）。
 
 - 格式參考[網頁](https://reurl.cc/WO5GjD)，但不完全複製。基本格式為：  
     ```
