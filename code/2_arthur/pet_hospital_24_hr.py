@@ -5,8 +5,8 @@ URL = "https://www.dogcatstar.com/blog/24hour-animal-hospital/?srsltid=AfmBOorT4
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0"
 }
-raw_path = "../../data/raw/hospital_24_hr_data.csv"
-processed_path = "../../data/processed/hospital_24_hr_data_ETL.csv"
+raw_path = "data/raw/hospital_24_hr_data.csv"
+processed_path = "data/processed/hospital_24_hr_data_ETL.csv"
 
 
 def main():

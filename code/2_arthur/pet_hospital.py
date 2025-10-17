@@ -4,8 +4,8 @@ import mods.get_pet_hospital as get_hospital
 
 
 URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
-raw_path = "../../data/raw/hospital_data.csv"
-processed_path = "../../data/processed/hospital_data_ETL.csv"
+raw_path = "data/raw/hospital_data.csv"
+processed_path = "data/processed/hospital_data_ETL.csv"
 
 # 對edge的options加上headers
 options = Options()
