@@ -1,7 +1,3 @@
-import pandas as pd
+from mods import test as tt
 
-file_path = "C:/Users/add41/Documents/Data_Engineer/Project/example_data/City_Data.csv"
-
-df = pd.read_csv(file_path)
-
-print(df["date"].iloc[-1])
+tt.test_print()
