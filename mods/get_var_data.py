@@ -1,10 +1,31 @@
 """
-此module建立讀取資料來源並轉換成DataFrame的方法
-
+此module包含讀取資料來源的方法
 """
 
 import requests
 import pandas as pd
+from bs4 import BeautifulSoup
+
+
+def get_the_html(url: str, headers: dict[str, str]) -> BeautifulSoup:
+    """取得網頁原始碼
+
+    Args:
+        url (str): 網頁連結
+        headers (dict[str, str]): 網頁標頭
+
+    Returns:
+        BeautifulSoup: 經過html.parser解析的網頁原始碼，如果有異常會回傳空的BeautifulSoup
+    """
+    try:
+        response = requests.get(url, headers)
+        return BeautifulSoup(response.text, "html.parser")
+    except requests.exceptions.HTTPError:
+        print(f"讀取時發生錯誤，錯誤代碼為{response.status_code}")
+        return BeautifulSoup()
+    except requests.exceptions.RequestException as err:
+        print(f"請求逾時，錯誤代碼{err}")
+        return BeautifulSoup()
 
 
 def get_json_data_no_verify(url: str) -> pd.DataFrame:
