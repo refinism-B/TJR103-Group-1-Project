@@ -1,3 +1,8 @@
+"""
+此module建立讀取資料來源並轉換成DataFrame的方法
+
+"""
+
 import requests
 import pandas as pd
 
