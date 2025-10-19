@@ -102,13 +102,13 @@ def main():
     for dist in city_list:
 
         # 根據縣市設定檔案路徑
-        file_path = f"C:/Users/add41/Documents/Data_Engineer/Project/Pet-Crawler/PetData/district/{city_dict[dist]}.csv"
+        file_path = f"C:/Users/add41/Documents/Data_Engineer/Project/example_data/district/{city_dict[dist]}.csv"
         print(f"開始搜尋{city_dict[dist]}鄉鎮市區資料...")
 
         # 先判斷是否存在既有檔案，若有則讀入，若無則建立新的DF
         if os.path.exists(file_path):
             df_main = pd.read_csv(file_path)
-            df_main.index = pd.to_datetime(df_main.index)
+            df_main["date"] = pd.to_datetime(df_main["date"])
         else:
             columns = [
             "AreaID",
@@ -130,9 +130,9 @@ def main():
 
         # 判斷是否已有資料存在，若無則從頭爬取，若有則從最後一筆資料日期開始接續
         if len(df_main.index) == 0:
-            start = datetime.strptime("2025/10/08", "%Y/%m/%d").date()
+            start = datetime.strptime("2025/10/13", "%Y/%m/%d").date()
         else:
-            last_date = df_main.index[-1]
+            last_date = df_main["date"].iloc[-1]
             start = last_date + timedelta(days=1)
             start = start.date()
         
@@ -173,14 +173,10 @@ def main():
                         df["date"] = start_date
                         df["city"] = dist
 
-                        # 將索引改為日期，並將日期欄位去除
-                        df.index = pd.to_datetime(df["date"])
-                        df.drop(columns="date", inplace=True)
-
                         # 將爬取的資料與原始資料結合並存檔
                         # 避免程式意外中止時，會因完全沒有存檔而丟失紀錄，浪費時間及資源
                         df_main = pd.concat([df_main, df])
-                        df_main.to_csv(file_path)
+                        df_main.to_csv(file_path, index=False)
                         time.sleep(7)
                         break
                     
