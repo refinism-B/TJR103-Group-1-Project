@@ -20,6 +20,7 @@ def get_the_html(url: str, headers: dict[str, str]) -> BeautifulSoup:
     """
     try:
         response = requests.get(url, headers)
+        print("網頁原始碼已取得")
         return BeautifulSoup(response.text, "html.parser")
     except requests.exceptions.HTTPError:
         print(f"讀取時發生錯誤，錯誤代碼為{response.status_code}")
