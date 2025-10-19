@@ -7,15 +7,15 @@ import time
 from pathlib import Path
 
 # 設定儲存檔案路徑
-file_path = "C:/Users/add41/Documents/Data_Engineer/Project/pet_project/data_local/City_Data.csv"
+file_path = "C:/Users/add41/Documents/Data_Engineer/Project/example_data/City_Data.csv"
 
 file = Path(file_path)
 
 def main():
     # 如已有資料存在，則讀入；若沒有資料則直接新建DF
     if file.exists():
-        main_df = pd.read_csv(file_path, index_col=0)
-        main_df.index = pd.to_datetime(main_df.index)
+        main_df = pd.read_csv(file_path)
+        main_df["date"] = pd.to_datetime(main_df["date"])
     else:
         columns = [
             "AreaID",
@@ -40,9 +40,9 @@ def main():
     today = date.today()
 
     if len(main_df.index) == 0:
-        start = datetime.strptime("2025/10/05", "%Y/%m/%d").date()
+        start = datetime.strptime("2025/10/10", "%Y/%m/%d").date()
     else:
-        last_date = main_df.index[-1]
+        last_date = main_df["date"].iloc[-1]
         start = last_date + timedelta(days=1)
         start = start.date()
 
@@ -97,18 +97,13 @@ def main():
                         # 新增資料日期及動物種類的欄位（原本沒有），並將多餘欄位drop
                         df["date"] = start_date
                         df["animal"] = ani
-                        df = df.drop(columns="QueryDT")
-
-                        # 將日期設定為索引，並將多餘欄位去除
-                        df.index = pd.to_datetime(df["date"])
-                        df.drop(columns="date", inplace=True)
 
                         # 將爬取的資料與原始資料結合並存檔
                         main_df = pd.concat([main_df, df])
 
                         # 每日檔案爬取完畢後就進行存檔
                         # 若程式因錯誤中止，至少不會因為全部沒有存檔而丟失紀錄、浪費時間資源
-                        main_df.to_csv(file_path)
+                        main_df.to_csv(file_path, index=False)
 
                         print(f"已儲存{ani_dict[ani]}{start_date}的資料")
                         time.sleep(7)
