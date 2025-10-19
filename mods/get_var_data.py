@@ -1,5 +1,6 @@
 """
 此module包含讀取資料來源的方法
+Creator: Chgwyellow
 """
 
 import requests
