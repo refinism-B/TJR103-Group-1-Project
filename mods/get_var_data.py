@@ -2,8 +2,40 @@ import requests
 import pandas as pd
 
 
+def get_json_data_no_verify(url: str) -> pd.DataFrame:
+    """
+    從政府API取得JSON資訊後轉成DataFrame
+
+    Args:
+        url (_type_): API網址，必須是JSON格式
+
+    Returns:
+        pd.DataFrame: 回傳DataFrame，如果有異常會回傳空的DF
+    """
+    try:
+        response = requests.get(url, verify=False)
+        print(f"response_status_code: {response.status_code}")
+
+        # 如果不是200，requests.exceptions.HTTPError
+        response.raise_for_status()
+
+        # 將API轉為JSON
+        data = response.json()
+
+        # JSON轉成DataFrame
+        return pd.DataFrame(data)
+
+    except requests.exceptions.HTTPError:
+        print(f"讀取時發生錯誤，錯誤代碼為{response.status_code}")
+        return pd.DataFrame()
+    except requests.exceptions.RequestException as err:
+        print(f"請求逾時，錯誤代碼{err}")
+        return pd.DataFrame()
+
+
 def get_json_data(url: str) -> pd.DataFrame:
-    """從API取得JSON資訊後轉成DataFrame
+    """
+    從非政府API取得JSON資訊後轉成DataFrame
 
     Args:
         url (_type_): API網址，必須是JSON格式
@@ -25,7 +57,7 @@ def get_json_data(url: str) -> pd.DataFrame:
         return pd.DataFrame(data)
 
     except requests.exceptions.HTTPError:
-        print(f"讀取時發生錯誤，返回代碼為{response.status_code}")
+        print(f"讀取時發生錯誤，錯誤代碼為{response.status_code}")
         return pd.DataFrame()
     except requests.exceptions.RequestException as err:
         print(f"請求逾時，錯誤代碼{err}")
