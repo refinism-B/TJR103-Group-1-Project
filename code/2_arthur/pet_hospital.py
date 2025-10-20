@@ -92,7 +92,13 @@ def main():
 
     # 移除:前面的資料
     for col in need_revised_columns:
-        df[col] = df[col].str.split("：").str[-1].str.strip()
+        df[col] = (
+            df[col]
+            .str.split("：")
+            .str[-1]
+            .str.replace(" ", "", regex=False)
+            .str.strip()
+        )
 
     # 將空字串設為NaN
     df = df.replace({"": np.nan})

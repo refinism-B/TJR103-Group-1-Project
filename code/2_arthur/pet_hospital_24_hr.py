@@ -39,7 +39,16 @@ def main():
     stc.store_to_csv_no_index(df, raw_path)
 
     # 執行ETL
-    df["hospital_name"] = df["hospital_name"].str.split("名稱：").str[-1].str.strip()
+    df["hospital_name"] = (
+        df["hospital_name"]
+        .str.split("名稱：")
+        .str[-1]
+        .str.replace(" ", "", regex=False)  # 去除值之間的空格
+        .str.strip()
+    )
+
+    df["hospital_address"] = df["hospital_address"].str.replace(" ", "", regex=False)
+
     # 儲存ETL後的檔案
     stc.store_to_csv_no_index(df, processed_path)
 
