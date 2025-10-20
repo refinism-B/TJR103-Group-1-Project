@@ -7,7 +7,6 @@ from selenium.webdriver.edge.options import Options
 from selenium.webdriver.common.by import By
 from selenium.common import exceptions
 from mods import store_to_csv as stc
-from functools import partial
 from mods import extract_city_district as ecd
 
 # 設定Selenium找不到元素與屬性時的錯誤
