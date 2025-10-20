@@ -7,6 +7,8 @@ from selenium.webdriver.edge.options import Options
 from selenium.webdriver.common.by import By
 from selenium.common import exceptions
 from mods import store_to_csv as stc
+from functools import partial
+from mods import extract_city_district as ecd
 
 # 設定Selenium找不到元素與屬性時的錯誤
 NoSuchElementException = exceptions.NoSuchElementException
@@ -103,6 +105,12 @@ def main():
     # 將空字串設為NaN
     df = df.replace({"": np.nan})
     df = df.fillna("無此資訊")
+
+    # 執行正則表達比對
+    df["city"], df["district"] = zip(*df["address"].apply(ecd.extract_city_district))
+
+    # 只取出city非空值的資料，其他drop，所以只會留下六都資訊
+    df = df[df["city"].notna()].reset_index(drop=True)
 
     # 儲存ETL後CSV檔
     stc.store_to_csv_no_index(df, processed_path)

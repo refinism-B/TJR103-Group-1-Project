@@ -1,6 +1,7 @@
 import pandas as pd
 from mods import get_var_data as gvd
 from mods import store_to_csv as stc
+from mods import extract_city_district as ecd
 
 # 設定URL和headers
 URL = "https://www.dogcatstar.com/blog/24hour-animal-hospital/?srsltid=AfmBOorT4sCf-7J95E1GuTg29XR3w-xYXl2qm-PZL1eOjPJ0k3ndzEem"
@@ -48,6 +49,17 @@ def main():
     )
 
     df["hospital_address"] = df["hospital_address"].str.replace(" ", "", regex=False)
+
+    # 執行正則表達比對
+    df["city"], df["district"] = zip(
+        *df["hospital_address"].apply(ecd.extract_city_district)
+    )
+
+    # 對city欄位為台北市的轉成臺北市
+    df["city"] = df["city"].str.replace("台", "臺")
+
+    # 只取出city非空值的資料，其他drop，所以只會留下六都資訊
+    df = df[df["city"].notna()].reset_index(drop=True)
 
     # 儲存ETL後的檔案
     stc.store_to_csv_no_index(df, processed_path)
