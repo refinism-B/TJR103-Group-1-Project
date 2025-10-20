@@ -35,6 +35,7 @@ hospital_normal["opening_hour"] = (
     hospital_normal["name"].isin(hospital_24["hospital_name"])
 ) | (hospital_normal["address"].isin(hospital_24["hospital_address"]))
 
+
 # 儲存df
 target_path = "data/processed/hospital_all_ETL.csv"
 stc.store_to_csv(hospital_normal, target_path)
