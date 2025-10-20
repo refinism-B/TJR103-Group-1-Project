@@ -110,7 +110,9 @@ def get_csv_data(path: str) -> pd.DataFrame:
     """
     try:
         # 若遇到編碼問題，可加上 encoding='utf-8' 或 encoding='cp950' 等
-        return pd.read_csv(path, encoding="utf-8-sig")
+        df = pd.read_csv(path, encoding="utf-8-sig")
+        print(Fore.GREEN + "CSV檔案已取回")
+        return df
     except FileNotFoundError:
         print(Fore.RED + f"[✗] 檔案不存在: {path}")
     except PermissionError:
