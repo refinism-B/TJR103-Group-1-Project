@@ -1,7 +1,7 @@
 import pandas as pd
-from mods import get_var_data as gvd
-from mods import store_to_csv as stc
-from mods import extract_city_district as ecd
+from mods import readdata as rd
+from mods import savedata as sd
+from mods import extractdata as ed
 
 # 設定URL和headers
 URL = "https://www.dogcatstar.com/blog/24hour-animal-hospital/?srsltid=AfmBOorT4sCf-7J95E1GuTg29XR3w-xYXl2qm-PZL1eOjPJ0k3ndzEem"
@@ -13,7 +13,7 @@ processed_path = "data/processed/hospital_24_hr_data_ETL.csv"
 
 
 def main():
-    soup = gvd.get_the_html(url=URL, headers=headers)
+    soup = rd.get_the_html(url=URL, headers=headers)
 
     # 所有的資訊都在p tag裡面
     p_tags = soup.select("p")
@@ -37,7 +37,7 @@ def main():
         {"hospital_name": hospital_name, "hospital_address": hospital_address}
     )
     # 儲存原始csv檔
-    stc.store_to_csv_no_index(df, raw_path)
+    sd.store_to_csv_no_index(df, raw_path)
 
     # 執行ETL
     df["hospital_name"] = (
@@ -52,7 +52,7 @@ def main():
 
     # 執行正則表達比對
     df["city"], df["district"] = zip(
-        *df["hospital_address"].apply(ecd.extract_city_district)
+        *df["hospital_address"].apply(ed.extract_city_district)
     )
 
     # 對city欄位為台北市的轉成臺北市
@@ -62,7 +62,7 @@ def main():
     df = df[df["city"].notna()].reset_index(drop=True)
 
     # 儲存ETL後的檔案
-    stc.store_to_csv_no_index(df, processed_path)
+    sd.store_to_csv_no_index(df, processed_path)
 
 
 if __name__ == "__main__":

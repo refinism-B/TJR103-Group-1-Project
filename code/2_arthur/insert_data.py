@@ -1,8 +1,8 @@
 import pymysql
 import os
 from colorama import Fore
-from mods import get_var_data as gd
-from mods import connect_db as conn_db
+from mods import readdata as rd
+from mods import connectDB as conn_db
 from dotenv import load_dotenv
 
 # 載入.env檔案
@@ -12,7 +12,7 @@ load_dotenv()
 file_path = "data/processed/hospital_all_ETL.csv"
 
 # 讀取要insert的df
-df = gd.get_csv_data(file_path)
+df = rd.get_csv_data(file_path)
 columns_to_insert = ["name", "address", "opening_hour"]
 df_filtered = df[columns_to_insert]
 

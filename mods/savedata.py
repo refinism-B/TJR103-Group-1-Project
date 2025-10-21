@@ -1,6 +1,8 @@
 """
 此module包含儲存成CSV的方法
 Creator: Chgwyellow
+
+from mods import savedata as sd
 """
 
 import os

@@ -6,8 +6,8 @@ from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.common.by import By
 from selenium.common import exceptions
-from mods import store_to_csv as stc
-from mods import extract_city_district as ecd
+from mods import savedata as sd
+from mods import extractdata as ed
 
 # 設定Selenium找不到元素與屬性時的錯誤
 NoSuchElementException = exceptions.NoSuchElementException
@@ -79,7 +79,7 @@ def main():
     print("DataFrame已建置完成")
 
     # 儲存原始CSV檔
-    stc.store_to_csv_no_index(df, raw_path)
+    sd.store_to_csv_no_index(df, raw_path)
 
     # ETL開始
     need_revised_columns = [
@@ -106,13 +106,13 @@ def main():
     df = df.fillna("無此資訊")
 
     # 執行正則表達比對
-    df["city"], df["district"] = zip(*df["address"].apply(ecd.extract_city_district))
+    df["city"], df["district"] = zip(*df["address"].apply(ed.extract_city_district))
 
     # 只取出city非空值的資料，其他drop，所以只會留下六都資訊
     df = df[df["city"].notna()].reset_index(drop=True)
 
     # 儲存ETL後CSV檔
-    stc.store_to_csv_no_index(df, processed_path)
+    sd.store_to_csv_no_index(df, processed_path)
 
 
 if __name__ == "__main__":

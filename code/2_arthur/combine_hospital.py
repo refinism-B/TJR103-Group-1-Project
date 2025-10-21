@@ -1,5 +1,5 @@
-from mods import get_var_data as gd
-from mods import store_to_csv as stc
+from mods import readdata as rd
+from mods import savedata as sd
 from thefuzz import fuzz
 
 
@@ -19,8 +19,8 @@ def match_fuzzy(name, address, df2, name_threshold=67, address_threshold=77):
 
 
 # 讀取csv檔並建立兩張df
-hospital_normal = gd.get_csv_data(path=hospital_path)
-hospital_24 = gd.get_csv_data(path=hospital_24_path)
+hospital_normal = rd.get_csv_data(path=hospital_path)
+hospital_24 = rd.get_csv_data(path=hospital_24_path)
 
 
 # 方法1
@@ -38,4 +38,4 @@ hospital_normal["opening_hour"] = (
 
 # 儲存df
 target_path = "data/processed/hospital_all_ETL.csv"
-stc.store_to_csv(hospital_normal, target_path)
+sd.store_to_csv(hospital_normal, target_path)

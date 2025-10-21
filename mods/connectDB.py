@@ -1,3 +1,10 @@
+"""
+與mysql連線的套件
+Creator: Chgwyellow
+
+from mods import connectDB as conn_db
+"""
+
 import pymysql
 from colorama import Fore
 

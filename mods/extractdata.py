@@ -1,3 +1,10 @@
+"""
+各種提取資料做轉化的函式庫
+Creator: Chgwyellow
+
+from mods import extractdata as ed
+"""
+
 import re
 
 
