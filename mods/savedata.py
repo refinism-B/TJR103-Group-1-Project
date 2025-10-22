@@ -1,10 +1,13 @@
 """
 此module包含儲存成CSV的方法
 Creator: Chgwyellow
+
+from mods import savedata as sd
 """
 
 import os
 import pandas as pd
+from colorama import Fore
 
 
 def store_to_csv_no_index(df: pd.DataFrame, path: str):
@@ -16,6 +19,7 @@ def store_to_csv_no_index(df: pd.DataFrame, path: str):
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     df.to_csv(path, index=False)
+    print(Fore.GREEN + "[✓] 不含index的CSV檔已存檔完畢")
 
 
 def store_to_csv(df: pd.DataFrame, path: str):
@@ -26,7 +30,8 @@ def store_to_csv(df: pd.DataFrame, path: str):
         path (str): 儲存路徑，如果該路徑不存在會自動建立
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    df.to_csv(path, index=False)
+    df.to_csv(path)
+    print(Fore.GREEN + "[✓] CSV檔已存檔完畢")
 
 
 def store_to_csv_no_index_no_header(df: pd.DataFrame, path: str):
@@ -38,6 +43,7 @@ def store_to_csv_no_index_no_header(df: pd.DataFrame, path: str):
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     df.to_csv(path, index=False, header=False)
+    print(Fore.GREEN + "[✓] 不含index和header的CSV檔已存檔完畢")
 
 
 def store_to_csv_no_header(df: pd.DataFrame, path: str):
@@ -49,3 +55,4 @@ def store_to_csv_no_header(df: pd.DataFrame, path: str):
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)
     df.to_csv(path, header=False)
+    print(Fore.GREEN + "[✓] 不含header的CSV檔已存檔完畢")
