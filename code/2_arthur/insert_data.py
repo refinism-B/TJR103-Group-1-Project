@@ -13,7 +13,7 @@ file_path = "data/processed/hospital_all_ETL.csv"
 
 # 讀取要insert的df
 df = rd.get_csv_data(file_path)
-columns_to_insert = ["name", "address", "opening_hour"]
+columns_to_insert = ["name", "address", "city", "district", "opening_hour"]
 df_filtered = df[columns_to_insert]
 
 # 設定資料庫連線
@@ -32,8 +32,8 @@ try:
     count = 0  # 計算幾筆資料
     for _, row in df_filtered.iterrows():
         sql = """
-        insert into hospital (name, address, opening_hour)
-        values (%s, %s, %s)
+        insert into hospital (name, address, city, district, opening_hour)
+        values (%s, %s, %s, %s, %s)
         """
         count += cursor.execute(sql, tuple(row))  # pymysql以tuple傳送資料
 
