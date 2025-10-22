@@ -27,3 +27,6 @@ soup = BeautifulSoup(response.text, "html.parser")
 
 city = soup.select("tbody td[data-th='所屬縣市']")
 print(city)
+
+
+
