@@ -20,7 +20,7 @@ def extract_city_district(address: str) -> tuple[str, str]:
     """
 
     # 這裡pattern用六都的方式做設定
-    pattern = r"(臺北市|台北市|新北市|桃園市|台中市|台南市|高雄市)(.*?區)"
+    pattern = r"(臺北市|台北市|新北市|桃園市|台中市|臺中市|台南市|臺南市|高雄市)(.*?區)"
     match = re.search(pattern=pattern, string=address)
     if match:
         return match.group(1), match.group(2)
