@@ -27,7 +27,7 @@ df_filtered = df_filtered[
 df_filtered["city"], df_filtered["district"] = zip(
     *df_filtered["legaladdress"].apply(ed.extract_city_district)
 )
-df_filtered = df_filtered[df_filtered["city"].notna()]
+df_filtered = df_filtered[df_filtered["city"].notna()].reset_index(drop=True)
 
 # 搜尋名字有旅、住、宿的資料
 df_filtered = df_filtered[df_filtered["legalname"].str.contains("旅|住|宿", regex=True)]
@@ -36,10 +36,12 @@ df_filtered = df_filtered[df_filtered["legalname"].str.contains("旅|住|宿", r
 df_filtered = df_filtered[["legalname", "legaladdress", "city", "district"]]
 
 # 修改欄位名稱
-df_filtered = df_filtered.rename(columns={
-    "legalname": "name",
-    "legaladdress": "address",
-})
+df_filtered = df_filtered.rename(
+    columns={
+        "legalname": "name",
+        "legaladdress": "address",
+    }
+)
 
 # 儲存ETL後的資料
 processed_path = "data/processed/pet_hotel_ETL.csv"
