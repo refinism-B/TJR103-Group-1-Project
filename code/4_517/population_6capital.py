@@ -40,6 +40,5 @@ def main():
     df = get_df_save_raw(data, raw_path)
     data_process(df, processed_path)
 
-
 if __name__ == "__main__":
     main()
