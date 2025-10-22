@@ -71,7 +71,7 @@ def main():
                 "0":"狗",
                 "1":"貓"
                 }
-            
+
             for ani in animal:
                 data = {
                     "Method":"O302_2",
@@ -80,7 +80,7 @@ def main():
                         "EDATE":end_date,
                         "Animal":ani
                     })}
-                
+
                 # 設定最大嘗試次數3次，若只是等候時間過短，還有機會成功
                 max_tries = 3
                 for tries in range(1, max_tries+1):
@@ -130,13 +130,13 @@ def main():
                             print(f"第{tries}次嘗試錯誤: {e}\n等待{tries * 5}秒後再次嘗試")
                             time.sleep(tries * 5)
                             continue
-            
+
             # 完成一日的資料爬取後就將起始日期+1，並再次迴圈
             start += timedelta(days=1)
 
         except Exception as e:
             print(e)
-    
+
     print("已將資料更新至最新！")
 
 
