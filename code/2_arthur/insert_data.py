@@ -19,7 +19,7 @@ df_filtered = df[columns_to_insert]
 # 設定資料庫連線
 host = os.getenv("DB_HOST")
 port = int(os.getenv("DB_PORT"))
-user = os.getenv("DB_USER")
+user = os.getenv("DB_USER_chgwyellow")
 password = os.getenv("DB_PASSWORD")
 db = os.getenv("DB")
 charset = os.getenv("DB_CHARSET")
