@@ -1,4 +1,5 @@
 import time
+import os
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -8,11 +9,15 @@ from selenium.webdriver.common.by import By
 from selenium.common import exceptions
 from mods import savedata as sd
 from mods import extractdata as ed
+from mods import gmap as gm
+from dotenv import load_dotenv
 
 # 設定Selenium找不到元素與屬性時的錯誤
 NoSuchElementException = exceptions.NoSuchElementException
 NoSuchAttributeException = exceptions.NoSuchAttributeException
 
+# 讀取.env檔案
+load_dotenv()
 
 URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
 raw_path = "data/raw/hospital_data.csv"
@@ -110,6 +115,21 @@ def main():
 
     # 只取出city非空值的資料，其他drop，所以只會留下六都資訊
     df = df[df["city"].notna()].reset_index(drop=True)
+
+    # drop不需要的欄位
+    df = df.drop(columns=["license", "license_date", "vet", "service"])
+
+    # 取得google key
+    API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
+
+    # 透過google api並傳送醫院名稱與地址取得醫院的place_id
+    result = []
+    for i, (idx, row) in enumerate(df.iterrows()):
+        query = f"{row['name']} {row['address']}"
+
+        result.append(gm.get_place_id(API_KEY, query))
+    df["place_id"] = np.nan
+    df.loc[:, "place_id"] = result
 
     # 儲存ETL後CSV檔
     sd.store_to_csv_no_index(df, processed_path)
