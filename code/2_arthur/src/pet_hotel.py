@@ -1,6 +1,13 @@
 from mods import readdata as rd
 from mods import savedata as sd
 from mods import extractdata as ed
+import os
+import numpy as np
+from dotenv import load_dotenv
+from mods import gmap as gm
+from colorama import Fore
+
+load_dotenv()
 
 url = "https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=fNT9RMo8PQRO"
 headers = {
@@ -43,6 +50,21 @@ df_filtered = df_filtered.rename(
     }
 )
 
-# 儲存ETL後的資料
-processed_path = "data/processed/pet_hotel_ETL.csv"
-sd.store_to_csv_no_index(df_filtered, processed_path)
+# 透過google api並傳送名稱與地址取得place_id
+API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
+result = []
+
+# enumerate會自動將被iterate的物件附上index
+for i, (idx, row) in enumerate(df_filtered.iterrows()):
+    query = f"{row['name']} {row['address']}"
+
+    result.append(gm.get_place_id(API_KEY, query))
+df_filtered["place_id"] = np.nan
+df_filtered.loc[:, "place_id"] = result
+
+if not df_filtered.isna().any():
+    # 儲存ETL後的資料
+    processed_path = "data/processed/pet_hotel_ETL.csv"
+    sd.store_to_csv_no_index(df_filtered, processed_path)
+else:
+    print(Fore.RED + "[✗] DataFrame內有空值，請檢查!")

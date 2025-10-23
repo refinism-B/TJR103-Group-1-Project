@@ -120,10 +120,12 @@ def main():
     df = df.drop(columns=["license", "license_date", "vet", "service"])
 
     # 取得google key
-    API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
-
+    API_KEY = os.getenv("OGLE_MAP_KEY_CHGWYELLOW")
+GO
     # 透過google api並傳送醫院名稱與地址取得醫院的place_id
     result = []
+
+    # enumerate會自動將被iterate的物件附上index
     for i, (idx, row) in enumerate(df.iterrows()):
         query = f"{row['name']} {row['address']}"
 
