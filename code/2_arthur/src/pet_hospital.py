@@ -121,7 +121,7 @@ def main():
 
     # 取得google key
     API_KEY = os.getenv("OGLE_MAP_KEY_CHGWYELLOW")
-GO
+
     # 透過google api並傳送醫院名稱與地址取得醫院的place_id
     result = []
 

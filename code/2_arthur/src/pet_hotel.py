@@ -3,6 +3,7 @@ from mods import savedata as sd
 from mods import extractdata as ed
 import os
 import numpy as np
+import pandas as pd
 from dotenv import load_dotenv
 from mods import gmap as gm
 from colorama import Fore
@@ -62,7 +63,24 @@ for i, (idx, row) in enumerate(df_filtered.iterrows()):
 df_filtered["place_id"] = np.nan
 df_filtered.loc[:, "place_id"] = result
 
-if not df_filtered.isna().any():
+# 透過place_id找到詳細資料
+result = []
+for _, row in df_filtered.iterrows():
+    result.append(gm.gmap_info(row["name"], API_KEY, row["place_id"]))
+df_checked = pd.DataFrame(result)
+
+df_merged = df_filtered.merge(
+    df_checked,
+    how="outer",
+    left_on=df_filtered["place_id"],
+    right_on=df_checked["place_id"],
+    suffixes=["_filtered", "_checked"],
+)
+
+# 去除重複欄位
+df_merged = df_merged.drop(columns=["place_id_filtered", "place_id_checked"])
+
+if not df_merged.isna().any():
     # 儲存ETL後的資料
     processed_path = "data/processed/pet_hotel_ETL.csv"
     sd.store_to_csv_no_index(df_filtered, processed_path)
