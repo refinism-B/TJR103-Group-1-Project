@@ -11,6 +11,7 @@ file_path = "C:/Users/add41/Documents/Data_Engineer/Project/example_data/City_Da
 
 file = Path(file_path)
 
+
 def main():
     # 如已有資料存在，則讀入；若沒有資料則直接新建DF
     if file.exists():
@@ -29,10 +30,9 @@ def main():
             "fld08",
             "fld07",
             "fld10",
-            "animal"
-            ]
+            "animal",
+        ]
         main_df = pd.DataFrame(columns=columns)
-
 
     # 定義日期，並判斷是否有既存資料。
     # 如果沒有資料（df長度為0）則從設定的日期開始
@@ -46,14 +46,15 @@ def main():
         start = last_date + timedelta(days=1)
         start = start.date()
 
-
     # 當起始日早於今天日期，則啟動爬蟲，直到資料更新至昨天為止
     while start < today:
         try:
             # 設定訪問網址和headers
             url = "https://www.pet.gov.tw/Handler/PostData.ashx"
 
-            headers = {"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"}
+            headers = {
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+            }
 
             # 定義查詢的起始和結束日期（每次以一天為單位爬取）
             fmt = "%Y/%m/%d"
@@ -66,25 +67,23 @@ def main():
 
             # 因有犬貓兩種類別，故需要分兩次爬取
             animal = ["0", "1"]
-            ani_dict = {
-                "0":"狗",
-                "1":"貓"
-                }
-            
+            ani_dict = {"0": "狗", "1": "貓"}
+
             for ani in animal:
                 data = {
-                    "Method":"O302_2",
-                    "Param":json.dumps({
-                        "SDATE":start_date,
-                        "EDATE":end_date,
-                        "Animal":ani
-                    })}
-                
+                    "Method": "O302_2",
+                    "Param": json.dumps(
+                        {"SDATE": start_date, "EDATE": end_date, "Animal": ani}
+                    ),
+                }
+
                 # 設定最大嘗試次數3次，若只是等候時間過短，還有機會成功
                 max_tries = 3
-                for tries in range(1, max_tries+1):
+                for tries in range(1, max_tries + 1):
                     try:
-                        print(f"開始查詢{ani_dict[ani]}的{start_date}到{end_date}的資料")
+                        print(
+                            f"開始查詢{ani_dict[ani]}的{start_date}到{end_date}的資料"
+                        )
                         res = requests.post(url, headers=headers, data=data)
                         res.encoding = "utf-8-sig"
 
@@ -114,16 +113,18 @@ def main():
                             print("已達最大嘗試次數")
                             break
                         else:
-                            print(f"第{tries}次嘗試錯誤: {e}\n等待{tries * 5}秒後再次嘗試")
+                            print(
+                                f"第{tries}次嘗試錯誤: {e}\n等待{tries * 5}秒後再次嘗試"
+                            )
                             time.sleep(tries * 5)
                             continue
-            
+
             # 完成一日的資料爬取後就將起始日期+1，並再次迴圈
             start += timedelta(days=1)
 
         except Exception as e:
             print(e)
-    
+
     print("已將資料更新至最新！")
 
 
