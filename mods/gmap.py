@@ -1,6 +1,66 @@
-import googlemaps
 from datetime import datetime
+
+import googlemaps
 from bs4 import BeautifulSoup
+
+"""
+這個模組主要用於使用google map API爬取資料
+
+- 基本用法：
+    1.  先取得api key
+    2.  使用gmaps = googlemaps.Client(key=api_key)建立連線
+    3.  使用gmaps.places(query=key_word, language='zh-TW')
+        以關鍵字方式搜尋google map，並回傳搜尋結果列表（每一
+        個結果的資訊會以字典的形式組成）
+    4.  使用gmaps.place(place_id=place_id, language='zh-TW')
+        以place id的方式搜尋google map地標（為精確搜尋，只會有
+        一個結果）資訊也是由字典形式組成
+    5.  字典中除了某些必要欄位一定會有，某些欄位是不一定會有的，
+        所以建議用.get()的方式取值，若沒有該欄位則會回傳None
+    6.  需要安裝第三方套件「googlemaps」但應該都已經在poetry中
+        了，如果沒有可以再執行一次「poetry install」檢查看看有
+        沒有漏裝的套件
+
+以下是這個模組自訂的函式，如有需要可以使用
+
+- get_key(api_key_path)：  
+    若金鑰以 txt 檔案的形式存檔，將 txt 檔路徑輸入，
+    便會自動 return key 值。
+
+- get_place_id(api_key, key_word)：  
+    將金鑰帶入變數 1，將關鍵字字串帶入變數 2，會自
+    回傳搜尋的第一個結果的 place id。
+
+- gmap_info(ori_name, api_key, place_id)：  
+    將金鑰帶入變數 2，place id 帶入變數 3，會自動
+    抓取地點資訊（主要是專題需要的資訊，詳細欄位
+    可看程式碼）。變數 1 是自行輸入的名稱字串，以防
+    搜尋不到結果時可以回傳只有名稱、其他為 None 的
+    字典。
+
+- get_place_dict(api_key_path, name: str, address: str)：  
+    上述函式的組合版，將 api key 的檔案路徑帶入變
+    數 1，地點名稱帶入變數 2，地址帶入變數 3，會自
+    動回傳該地資訊的字典（專題所需的欄位）。
+
+- newest_review_date(review_list: list)：  
+    輸入評論的 list（透過 gmap 取得的 review 內容），
+    會找出並回傳最新的評論日期。
+
+- trans_unix_to_date(timestamp)：  
+    將 unix 電腦時間轉換成現在的年月日。搭配上一個
+    函式，因 gmap 回傳的時間為 unix 時間，需要轉換。
+
+原本只是寫給自己方便使用，所以沒有做太多防呆，如果有
+個別需求建議還是使用套件本身的函式 gmaps.places()
+或 gmaps.place() 會比較靈活。
+
+API 訪問次數為每月限額（實際次數有點混亂但應該夠我們使
+用），所以建議在測試階段先以部分或少量資料做練習或測試，
+等開發的完成後，再使用完整資料。另外建議也可以先存取每
+個地點的 place id，之後就可以使用 place id 精確搜尋，
+免除找 place id 的步驟。
+"""
 
 
 
@@ -113,13 +173,76 @@ def gmap_info(ori_name, api_key, place_id):
     return place_info
 
 
-def get_place_dict(api_key_path, name: str, address: str):
+def get_place_dict(name: str, address: str, api_key_path=None, api_key=None):
     """帶入api_key.txt檔案路徑和「命稱」、「地址」字串，能自動搜尋並返回資訊。
        返回資訊為字典，可直接轉換成DataFrame。"""
     key_word = name + " " + address
 
-    api_key = get_key(api_key_path=api_key_path)
+    if api_key_path is not None:
+        api_key = get_key(api_key_path=api_key_path)
+    elif api_key is not None:
+        api_key = api_key
+    else:
+        print("please imput api_key or api_key_path")
+        return None
+        
     place_id = get_place_id(api_key=api_key, key_word=key_word)
     place_dict = gmap_info(ori_name=name, api_key=api_key, place_id=place_id)
 
     return place_dict
+
+
+
+def gmap_nearby_search(key, lat, lon, radius, keyword):
+    """提供api_key、經緯度、搜尋半徑和關鍵字，回傳搜尋結果的列表，資訊包括名稱、place_id和營業狀態"""
+    # 使用gmap連線並搜尋，取得搜尋結果
+    gmaps = googlemaps.Client(key=key)
+    search_result = gmaps.places_nearby(location=(lat, lon), radius=radius, keyword=keyword)
+    result = search_result.get("results", [])
+    page = 1
+    
+    # 取出第一頁搜尋結果的名稱、place_id和地址，存成字典後加入list
+    result_data = []
+    for place in result:
+        place_dict = {
+            "name":place.get("name", None),
+            "place_id":place.get("place_id", None),
+            "buss_status":place.get("business_status", None)
+        }
+        result_data.append(place_dict)
+
+
+    # 進入迴圈判斷是否有下一頁，如果沒有直接停止，若有則迴圈
+    time.sleep(2.5)
+    next_page = search_result.get("next_page_token", None)
+    
+    while next_page:
+        page += 1
+        max_tries = 3
+        for tries in range(1, max_tries+1):
+            try:
+                print(f"正在取得第{page}頁資訊...")
+                time.sleep(2.5)
+                next_page_search = gmaps.places_nearby(page_token=next_page)
+                next_page_result = next_page_search.get("results", [])
+                for place in next_page_result:
+                    place_dict = {
+                        "name":place.get("name", None),
+                        "place_id":place.get("place_id", None),
+                        "buss_status":place.get("business_status", None)
+                    }
+                    result_data.append(place_dict)
+                time.sleep(2.5)
+                next_page = next_page_search.get("next_page_token", None)
+                break
+
+            except Exception as e:
+                if tries >= max_tries:
+                    print("已達最大嘗試次數")
+                    next_page = None
+                    break
+                else:
+                    print(f"第{tries}次嘗試失敗：{e}\n等待3秒後重試...")
+                    time.sleep(3)
+    
+    return result_data
