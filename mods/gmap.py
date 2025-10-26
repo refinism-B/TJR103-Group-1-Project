@@ -102,7 +102,8 @@ def gmap_info(ori_name, api_key, place_id=None):
             address = detail.get("result", {}).get("formatted_address", None)
         elif detail["result"]["adr_address"]:
             address = BeautifulSoup(
-                detail.get("result", {}).get("adr_address", None), "html.parser"
+                detail.get("result", {}).get(
+                    "adr_address", None), "html.parser"
             ).text
         else:
             address = None
@@ -112,7 +113,8 @@ def gmap_info(ori_name, api_key, place_id=None):
             phone = phone.replace(" ", "")
 
         opening_hours = (
-            detail.get("result", {}).get("opening_hours", {}).get("weekday_text", None)
+            detail.get("result", {}).get(
+                "opening_hours", {}).get("weekday_text", None)
         )
         types = detail.get("result", {}).get("types", None)
         rating = detail.get("result", {}).get("rating", None)
@@ -193,12 +195,13 @@ def get_place_dict(
         raise TypeError("請輸入 API key 或 API key 路徑！")
 
     # 接著確認用哪種方式進行搜尋
-    ## 如果有place id可直接精準搜尋回傳資訊
+    # 如果有place id可直接精準搜尋回傳資訊
     if place_id is not None:
-        place_dict = gmap_info(ori_name=name, api_key=api_key, place_id=place_id)
+        place_dict = gmap_info(
+            ori_name=name, api_key=api_key, place_id=place_id)
         return place_dict
 
-    ## 若沒有place id，再確認是輸入關鍵字或是名字和地址
+    # 若沒有place id，再確認是輸入關鍵字或是名字和地址
     if keyword is None:
         if name is None and address is None:
             raise TypeError("請擇一輸入 keyword/name+address")
