@@ -2,6 +2,8 @@ import time
 import os
 import numpy as np
 import pandas as pd
+import googlemaps
+from colorama import Fore
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options
@@ -29,6 +31,89 @@ options.add_argument("user-agent=MyAgent/1.0")
 
 # 設定edge的driver
 driver = webdriver.Edge(options=options)
+
+
+# TODO: 之後要封裝
+def gmap_info(ori_name, api_key, place_id):
+    """提供place_id，回傳名稱、營業狀態、營業時間、gmap評分、經緯度、gmap網址、最新評論日期"""
+    if pd.notna(place_id) and place_id not in (None, "", "nan"):
+        try:
+            gmaps = googlemaps.Client(key=api_key)
+            detail = gmaps.place(place_id=place_id, language="zh-TW")
+        except Exception as e:
+            # API 呼叫失敗，回傳 minimal fallback
+            return {
+                "name": ori_name,
+                "place_id": place_id,
+                "business_status": None,
+                "address": None,
+                "phone": None,
+                "opening_hours": None,
+                "rating": None,
+                "rating_total": None,
+                "longitude": None,
+                "latitude": None,
+                "map_url": None,
+                "newest_review": None,
+            }
+
+        result = detail.get("result") or {}
+        name = result.get("name")
+        business_status = result.get("business_status")
+
+        formatted_address = result.get("formatted_address")
+        adr_address = result.get("adr_address")
+        if formatted_address:
+            address = formatted_address
+        elif adr_address:
+            address = BeautifulSoup(adr_address, "html.parser").text
+        else:
+            address = None
+
+        phone = result.get("formatted_phone_number")
+        if isinstance(phone, str):
+            phone = phone.replace(" ", "")
+
+        opening_hours = result.get("opening_hours", {}).get("weekday_text")
+        rating = result.get("rating")
+        rating_total = result.get("user_ratings_total")
+        longitude = result.get("geometry", {}).get("location", {}).get("lng")
+        latitude = result.get("geometry", {}).get("location", {}).get("lat")
+        map_url = result.get("url")
+        review_list = result.get("reviews")
+        newest_review = gm.newest_review_date(review_list) if review_list else None
+
+        place_info = {
+            "name": name,
+            "place_id": place_id,
+            "business_status": business_status,
+            "address": address,
+            "phone": phone,
+            "opening_hours": opening_hours,
+            "rating": rating,
+            "rating_total": rating_total,
+            "longitude": longitude,
+            "latitude": latitude,
+            "map_url": map_url,
+            "newest_review": newest_review,
+        }
+    else:
+        place_info = {
+            "name": ori_name,
+            "place_id": None,
+            "business_status": None,
+            "address": None,
+            "phone": None,
+            "opening_hours": None,
+            "rating": None,
+            "rating_total": None,
+            "longitude": None,
+            "latitude": None,
+            "map_url": None,
+            "newest_review": None,
+        }
+
+    return place_info
 
 
 def main():
@@ -133,8 +218,29 @@ def main():
     df["place_id"] = np.nan
     df.loc[:, "place_id"] = result
 
-    # 儲存ETL後CSV檔
-    sd.store_to_csv_no_index(df, processed_path)
+    # 透過place_id找到詳細資料
+    result = []
+    for _, row in df.iterrows():
+        result.append(gmap_info(row["name"], API_KEY, row["place_id"]))
+
+    df_google = pd.DataFrame(result)
+
+    df_merged = df.merge(
+        df_google,
+        how="outer",
+        left_on=df["place_id"],
+        right_on=df_google["place_id"],
+        suffixes=["_filtered", "_checked"],
+    )
+
+    # 去除重複欄位
+    df_merged = df_merged.drop(columns=["place_id_filtered", "place_id_checked"])
+
+    # 儲存ETL後的資料
+    if not df_merged.isna().any():
+        sd.store_to_csv_no_index(df_merged, processed_path)
+    else:
+        print(Fore.RED + "[✗] DataFrame內有空值，請檢查!")
 
 
 if __name__ == "__main__":
