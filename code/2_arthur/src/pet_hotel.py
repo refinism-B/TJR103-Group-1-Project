@@ -80,9 +80,34 @@ df_merged = df_filtered.merge(
 # 去除重複欄位
 df_merged = df_merged.drop(columns=["place_id_filtered", "place_id_checked"])
 
+# 修改columns順序
+revised_columns = [
+    "key_0",
+    "name_filtered",
+    "name_checked",
+    "address_filtered",
+    "address_checked",
+    "phone",
+    "city",
+    "district",
+    "business_status",
+    "opening_hours",
+    "rating",
+    "rating_total",
+    "longitude",
+    "latitude",
+    "map_url",
+    "newest_review",
+]
+df_merged = df_merged[revised_columns]
+
+# 判斷key_0是否有重複
+if df_merged["key_0"].duplicated().any():
+    df_merged = df_merged.drop_duplicates(subset="key_0")
+
 if not df_merged.isna().any():
     # 儲存ETL後的資料
     processed_path = "data/processed/pet_hotel_ETL.csv"
-    sd.store_to_csv_no_index(df_filtered, processed_path)
+    sd.store_to_csv_no_index(df_merged, processed_path)
 else:
     print(Fore.RED + "[✗] DataFrame內有空值，請檢查!")
