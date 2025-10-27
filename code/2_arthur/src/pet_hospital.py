@@ -236,6 +236,32 @@ def main():
     # 去除重複欄位
     df_merged = df_merged.drop(columns=["place_id_filtered", "place_id_checked"])
 
+    # 去除重複的place_id
+    df_merged = df_merged.drop_duplicates(subset="key_0")
+
+    # 將欄位重新編排
+    # 名稱、地址與電話欄位排一起方便比對
+    revised_columns = [
+        "key_0",
+        "name_filtered",
+        "name_checked",
+        "address_filtered",
+        "address_checked",
+        "tel",
+        "phone",
+        "city",
+        "district",
+        "business_status",
+        "opening_hours",
+        "rating",
+        "rating_total",
+        "longitude",
+        "latitude",
+        "map_url",
+        "newest_review",
+    ]
+    df_merged = df_merged[revised_columns]
+
     # 儲存ETL後的資料
     if not df_merged.isna().any():
         sd.store_to_csv_no_index(df_merged, processed_path)
