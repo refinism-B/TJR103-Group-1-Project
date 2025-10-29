@@ -13,6 +13,7 @@ file_path = "/home/add412/project/pet_crawler/regis_data/city_data.csv"
 
 file = Path(file_path)
 
+
 def main():
     # 如已有資料存在，則讀入；若沒有資料則直接新建DF
     if file.exists():
@@ -31,10 +32,9 @@ def main():
             "fld08",
             "fld07",
             "fld10",
-            "animal"
-            ]
+            "animal",
+        ]
         main_df = pd.DataFrame(columns=columns)
-
 
     # 定義日期，並判斷是否有既存資料。
     # 如果沒有資料（df長度為0）則從設定的日期開始
@@ -47,14 +47,15 @@ def main():
         last_date = datetime.strptime(main_df["date"].iloc[-1], "%Y/%m/%d").date()
         start = last_date + timedelta(days=1)
 
-
     # 當起始日早於今天日期，則啟動爬蟲，直到資料更新至昨天為止
     while start < today:
         try:
             # 設定訪問網址和headers
             url = "https://www.pet.gov.tw/Handler/PostData.ashx"
 
-            headers = {"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"}
+            headers = {
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+            }
 
             # 定義查詢的起始和結束日期（每次以一天為單位爬取）
             fmt = "%Y/%m/%d"
@@ -67,25 +68,23 @@ def main():
 
             # 因有犬貓兩種類別，故需要分兩次爬取
             animal = ["0", "1"]
-            ani_dict = {
-                "0":"狗",
-                "1":"貓"
-                }
+            ani_dict = {"0": "狗", "1": "貓"}
 
             for ani in animal:
                 data = {
-                    "Method":"O302_2",
-                    "Param":json.dumps({
-                        "SDATE":start_date,
-                        "EDATE":end_date,
-                        "Animal":ani
-                    })}
+                    "Method": "O302_2",
+                    "Param": json.dumps(
+                        {"SDATE": start_date, "EDATE": end_date, "Animal": ani}
+                    ),
+                }
 
                 # 設定最大嘗試次數3次，若只是等候時間過短，還有機會成功
                 max_tries = 3
-                for tries in range(1, max_tries+1):
+                for tries in range(1, max_tries + 1):
                     try:
-                        print(f"開始查詢{ani_dict[ani]}的{start_date}到{end_date}的資料")
+                        print(
+                            f"開始查詢{ani_dict[ani]}的{start_date}到{end_date}的資料"
+                        )
                         res = requests.post(url, headers=headers, data=data)
                         res.encoding = "utf-8-sig"
 
@@ -108,12 +107,13 @@ def main():
 
                         print(f"已儲存{ani_dict[ani]}{start_date}的資料")
 
-
                         bucket_name = "pet-crawler"
                         destination_file = "pet-regis-data/pet_city_data.csv"
                         credentials_path = "/home/add412/tool/tactile-pulsar-473901-a1-4763fa15e78b.json"
 
-                        client = storage.Client.from_service_account_json(credentials_path)
+                        client = storage.Client.from_service_account_json(
+                            credentials_path
+                        )
                         bucket = client.bucket(bucket_name)
                         blob = bucket.blob(destination_file)
 
@@ -127,7 +127,9 @@ def main():
                             print("已達最大嘗試次數")
                             break
                         else:
-                            print(f"第{tries}次嘗試錯誤: {e}\n等待{tries * 5}秒後再次嘗試")
+                            print(
+                                f"第{tries}次嘗試錯誤: {e}\n等待{tries * 5}秒後再次嘗試"
+                            )
                             time.sleep(tries * 5)
                             continue
 
