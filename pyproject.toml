@@ -24,7 +24,10 @@ dependencies = [
     "googlemaps (>=4.10.0,<5.0.0)",
     "lxml (>=6.0.2,<7.0.0)",
     "thefuzz (>=0.22.1,<0.23.0)",
-    "python-dotenv (>=1.1.1,<2.0.0)"
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "xlrd (>=2.0.2,<3.0.0)",
+    "sqlalchemy (>=2.0.44,<3.0.0)",
+    "geopandas (>=1.1.1,<2.0.0)"
 ]
 
 

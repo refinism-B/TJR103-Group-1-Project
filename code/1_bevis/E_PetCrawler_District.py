@@ -18,12 +18,15 @@ def get_city_list(url, headers):
     start_date = start_date.strftime(fmt)
 
     data = {
-        "Method":"O302_2",
-        "Param":json.dumps({
-            "SDATE":start_date,
-            "EDATE":end_date,
-            "Animal":"0",
-        })}
+        "Method": "O302_2",
+        "Param": json.dumps(
+            {
+                "SDATE": start_date,
+                "EDATE": end_date,
+                "Animal": "0",
+            }
+        ),
+    }
 
     res = requests.post(url, headers=headers, data=data)
     res.encoding = "utf-8-sig"
@@ -36,7 +39,6 @@ def get_city_list(url, headers):
     country_list = list(df_id_list["AreaID"])
 
     return country_list
-
 
 
 """
@@ -58,7 +60,9 @@ def get_city_list(url, headers):
 # 設定訪問網址及headers
 url = "https://www.pet.gov.tw/Handler/PostData.ashx"
 
-headers = {"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"}
+headers = {
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+}
 
 
 # 主要爬蟲程式
@@ -66,7 +70,7 @@ def main():
     # 先取得縣市代碼list
     city_list = get_city_list(url, headers)
 
-    #　取得當前日期
+    # 　取得當前日期
     today = date.today()
 
     # 區分犬貓代號
@@ -74,28 +78,28 @@ def main():
 
     # 代碼對應的縣市名，用於存檔檔名
     city_dict = {
-        "A":"NewTaipei",
-        "V":"Taipei",
-        "S":"Taichung",
-        "U":"Tainan",
-        "W":"Kaohsiung",
-        "C":"Taoyuan",
-        "B":"Yilan",
-        "D":"Hsinchu",
-        "E":"Miaoli",
-        "G":"Changhua",
-        "H":"Nantou",
-        "I":"Yunlin",
-        "J":"Chiayi",
-        "M":"Pingtung",
-        "N":"Taitung",
-        "O":"Hualien",
-        "P":"Penghu",
-        "Q":"Keelung",
-        "R":"HsinchuCity",
-        "T":"ChiayiCity",
-        "Y":"Kinmen",
-        "X":"Lianjiang"
+        "A": "NewTaipei",
+        "V": "Taipei",
+        "S": "Taichung",
+        "U": "Tainan",
+        "W": "Kaohsiung",
+        "C": "Taoyuan",
+        "B": "Yilan",
+        "D": "Hsinchu",
+        "E": "Miaoli",
+        "G": "Changhua",
+        "H": "Nantou",
+        "I": "Yunlin",
+        "J": "Chiayi",
+        "M": "Pingtung",
+        "N": "Taitung",
+        "O": "Hualien",
+        "P": "Penghu",
+        "Q": "Keelung",
+        "R": "HsinchuCity",
+        "T": "ChiayiCity",
+        "Y": "Kinmen",
+        "X": "Lianjiang",
     }
 
     # 開始按照縣市代碼list進行迴圈
@@ -111,22 +115,21 @@ def main():
             df_main["date"] = pd.to_datetime(df_main["date"])
         else:
             columns = [
-            "AreaID",
-            "AreaName",
-            "fld01",
-            "fld02",
-            "fld03",
-            "fld05",
-            "fld06",
-            "fld04",
-            "fld08",
-            "fld07",
-            "fld10",
-            "animal"
+                "AreaID",
+                "AreaName",
+                "fld01",
+                "fld02",
+                "fld03",
+                "fld05",
+                "fld06",
+                "fld04",
+                "fld08",
+                "fld07",
+                "fld10",
+                "animal",
             ]
 
             df_main = pd.DataFrame(columns=columns)
-
 
         # 判斷是否已有資料存在，若無則從頭爬取，若有則從最後一筆資料日期開始接續
         if len(df_main.index) == 0:
@@ -135,7 +138,6 @@ def main():
             last_date = df_main["date"].iloc[-1]
             start = last_date + timedelta(days=1)
             start = start.date()
-        
 
         # 若起始日期早於當下日期，則開始迴圈更新資料
         while start < today:
@@ -147,17 +149,20 @@ def main():
             # 根據兩種寵物類別分別迴圈爬取資料（因需帶入不同資料POST）
             for ani in animal:
                 data = {
-                    "Method":"O302C_2",
-                    "Param":json.dumps({
-                        "SDATE":start_date,
-                        "EDATE":end_date,
-                        "Animal":ani,
-                        "CountyID":dist
-                    })}
+                    "Method": "O302C_2",
+                    "Param": json.dumps(
+                        {
+                            "SDATE": start_date,
+                            "EDATE": end_date,
+                            "Animal": ani,
+                            "CountyID": dist,
+                        }
+                    ),
+                }
 
                 # 設定最大嘗試次數3次，若是因間隔過短或許可在多次嘗試後成功
                 max_tries = 3
-                for tries in range(1, max_tries+1):
+                for tries in range(1, max_tries + 1):
                     try:
                         res = requests.post(url, headers=headers, data=data)
                         res.encoding = "utf-8-sig"
@@ -179,14 +184,16 @@ def main():
                         df_main.to_csv(file_path, index=False)
                         time.sleep(7)
                         break
-                    
+
                     except Exception as e:
                         if tries >= max_tries:
                             print("已達最大嘗試次數，跳過該日")
                             break
                         else:
-                            print(f"第{tries}次嘗試錯誤：{e}\n等待{tries*5}秒後再次嘗試...")
-                            time.sleep(tries*5)
+                            print(
+                                f"第{tries}次嘗試錯誤：{e}\n等待{tries*5}秒後再次嘗試..."
+                            )
+                            time.sleep(tries * 5)
                             continue
 
             # 每完成一日犬貓資料更新，就印出訊息告知，並將起始日+1重複迴圈
@@ -197,8 +204,6 @@ def main():
         print(f"已完成更新{city_dict[dist]}資料至{today}！")
 
     print("已完成所有資料更新！")
-
-
 
 
 if __name__ == "__main__":
