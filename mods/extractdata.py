@@ -137,4 +137,7 @@ def clean_google_data(
     ]
     df_final = df_final[columns]
 
+    cursor.close()
+    conn.close()
+
     return df_final
