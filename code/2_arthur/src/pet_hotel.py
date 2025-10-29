@@ -125,7 +125,7 @@ df_merged[fillna_columns] = df_merged[fillna_columns].fillna(0)
 conn, cursor = connDB.connect_db(host, port, user, password, db)
 
 # 讀取location表格的資料並轉成DataFrame
-df_loc = connDB.get_loc_table(cursor)
+df_loc = connDB.get_loc_table(conn, cursor)
 
 # merge df_merged和df_loc
 df_final = df_merged.merge(df_loc, left_on="district", right_on="district", how="left")

@@ -52,10 +52,11 @@ def connect_db(host: str, port: int, user: str, password: str, db: str):
     return None, None
 
 
-def get_loc_table(cursor) -> pd.DataFrame:
+def get_loc_table(conn, cursor) -> pd.DataFrame:
     """從DB取回location table的loc_id, city, district
 
     Args:
+        conn: MySQL連線資訊
         cursor: pymysql的cursor物件
 
     Returns:
@@ -66,7 +67,23 @@ def get_loc_table(cursor) -> pd.DataFrame:
     select loc_id, city, district
     from location;
     """
-    cursor.execute(sql)
-    loc = cursor.fetchall()
-
-    return pd.DataFrame(data=loc, columns=["loc_id", "city", "district"])
+    try:
+        cursor.execute(sql)
+        loc = cursor.fetchall()
+        df = pd.DataFrame(data=loc, columns=["loc_id", "city", "district"])
+        print(Fore.GREEN + "location資料已取回")
+        return df
+    except pymysql.err.OperationalError as e:
+        conn.rollback()
+        # 可實作重連/重試
+        print(Fore.RED + "❌ OperationalError:", e)
+    except pymysql.err.IntegrityError as e:
+        conn.rollback()
+        # 資料違反約束，記錄錯誤供人工處理
+        print(Fore.RED + "❌ IntegrityError:", e)
+    except pymysql.MySQLError as e:
+        conn.rollback()
+        print(Fore.RED + "❌ MySQLError:", e)
+    except Exception as e:
+        # 其他非預期錯誤
+        print(Fore.RED + "❌ Unexpected error:", e)
