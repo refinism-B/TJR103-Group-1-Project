@@ -6,10 +6,11 @@ from mods import connectDB as conn_db
 """
 
 import pymysql
+import pandas as pd
 from colorama import Fore
 
 
-def connect_db(host: str, port: int, user: str, password: str, db: str, charset: str):
+def connect_db(host: str, port: int, user: str, password: str, db: str):
     """對資料庫做連線
     請使用.env讀取的內容做為參數傳入
 
@@ -30,7 +31,12 @@ def connect_db(host: str, port: int, user: str, password: str, db: str, charset:
 
     try:
         conn = pymysql.connect(
-            host=host, port=port, user=user, passwd=password, db=db, charset=charset
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=db,
+            charset="utf8mb4",
         )
         print(Fore.GREEN + f"✅ {db}資料庫已成功連線")
 
@@ -44,3 +50,23 @@ def connect_db(host: str, port: int, user: str, password: str, db: str, charset:
     except Exception as e:
         print(Fore.RED + "❌ 其他錯誤：", e)
     return None, None
+
+
+def get_loc_table(cursor) -> pd.DataFrame:
+    """從DB取回location table的loc_id, city, district
+
+    Args:
+        cursor: pymysql的cursor物件
+
+    Returns:
+        pd.DataFrame: 包含loc_id, city和district的DataFrame
+    """
+
+    sql = """
+    select loc_id, city, district
+    from location;
+    """
+    cursor.execute(sql)
+    loc = cursor.fetchall()
+
+    return pd.DataFrame(data=loc, columns=["loc_id", "city", "district"])
