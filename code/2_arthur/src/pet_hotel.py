@@ -105,6 +105,9 @@ df_merged = df_merged[revised_columns]
 if df_merged["key_0"].duplicated().any():
     df_merged = df_merged.drop_duplicates(subset="key_0")
 
+# 只留下business_status為OPERATIONAL的資料
+df_merged[df_merged["business_status"] == "OPERATIONAL"]
+
 if not df_merged.isna().any():
     # 儲存ETL後的資料
     processed_path = "data/processed/pet_hotel_ETL.csv"
