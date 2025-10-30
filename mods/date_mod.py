@@ -31,7 +31,8 @@ def trans_op_time_to_hours(op_time: list):
     # 若沒有營業時間，則時數直接為0
     if op_time is None:
         op_hours = 0
-
+    elif op_time.lower() == "nan":
+        op_hours = 0
     # 若有營業時間，則逐日計算時數後相加
     else:
         op_hours = 0
