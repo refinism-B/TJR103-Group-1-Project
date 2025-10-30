@@ -39,6 +39,7 @@ def clean_google_data(
     user: str,
     password: str,
     db: str,
+    id_sign: str,
 ) -> pd.DataFrame:
     # 透過google api並傳送名稱與地址取得place_id
     result = []
@@ -119,8 +120,20 @@ def clean_google_data(
         df_loc, left_on="district", right_on="district", how="left"
     )
 
+    # 依照city和district排序
+    df_final = df_final.sort_values(["city", "district"])
+
+    # 建立hotel_id欄位
+    df_final["hotel_id"] = np.nan
+
+    # 給hotel_id賦值
+    num = df_final["hotel_id"].isna().sum()
+    new_ids = [f"{id_sign}{str(i).zfill(4)}" for i in range(1, num + 1)]
+    df_final.loc[:, "hotel_id"] = new_ids
+
     # 重新編排columns順序
     columns = [
+        "hotel_id",
         "key_0",
         "name_checked",
         "address_checked",
@@ -143,5 +156,7 @@ def clean_google_data(
 
     # 修改欄位名稱key_0 -> place_id
     df_final = df_final.rename(columns={"key_0": "place_id"})
+
+    # TODO 修改opening_time欄位
 
     return df_final

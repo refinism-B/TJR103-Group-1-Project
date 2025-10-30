@@ -43,7 +43,7 @@ DROP TABLE IF EXISTS Dashboard;
 CREATE TABLE Dashboard(
 	location VARCHAR(12),
 	convenience DECIMAL(2, 1)
-) COMMENT = '儀錶板資料表'
+) COMMENT = '儀錶板資料表';
 #
 DROP TABLE IF EXISTS Hotel;
 CREATE TABLE Hotel(
@@ -60,8 +60,8 @@ CREATE TABLE Hotel(
 	types VARCHAR(200) COMMENT '機構種類',
 	rating DECIMAL(2, 1) NOT NULL COMMENT '評論星數',
 	rating_total INT NOT NULL COMMENT '評論數量',
-	longitude DECIMAL(11, 8) NOT NULL COMMENT '經度',
-	latitude DECIMAL(11, 8) NOT NULL COMMENT '緯度',
+	longitude DECIMAL(9, 6) NOT NULL COMMENT '經度',
+	latitude DECIMAL(9, 6) NOT NULL COMMENT '緯度',
 	map_url VARCHAR(500) NOT NULL COMMENT 'gmap連結',
 	website VARCHAR(500) COMMENT '寵旅官網',
 	newest_review DATE COMMENT '最新評論日期',
@@ -70,4 +70,4 @@ CREATE TABLE Hotel(
 	-- CONSTRAINT
 	PRIMARY KEY(hotel_id)
 -- 	FOREIGN KEY(loc_id) REFERENCES location(loc_id)
-) COMMENT = '寵物旅館資料表'
+) COMMENT = '寵物旅館資料表';
