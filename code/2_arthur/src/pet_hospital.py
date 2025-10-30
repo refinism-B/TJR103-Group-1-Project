@@ -116,7 +116,7 @@ def gmap_info(ori_name, api_key, place_id):
     return place_info
 
 
-def main():
+if __name__ == "__main__":
     driver.get(URL)
     time.sleep(2)
 
@@ -171,103 +171,45 @@ def main():
     # 儲存原始CSV檔
     sd.store_to_csv_no_index(df, raw_path)
 
-    # ETL開始
-    need_revised_columns = [
-        "license",
-        "license_date",
-        "vet",
-        "tel",
-        "address",
-        "service",
-    ]
+    # 初步ETL
+    # 只保留name和address
+    need_columns = ["name", "address"]
+    df = df[need_columns]
 
     # 移除:前面的資料
-    for col in need_revised_columns:
-        df[col] = (
-            df[col]
-            .str.split("：")
-            .str[-1]
-            .str.replace(" ", "", regex=False)
-            .str.strip()
-        )
+    df["address"] = (
+        df["address"]
+        .str.split("：")
+        .str[-1]
+        .str.replace(" ", "", regex=False)
+        .str.strip()
+    )
 
-    # 將空字串設為NaN
-    df = df.replace({"": np.nan})
-    df = df.fillna("無此資訊")
-
-    # 執行正則表達比對
+    # 執行正則表達比對並建立city, district欄位
     df["city"], df["district"] = zip(*df["address"].apply(ed.extract_city_district))
 
     # 只取出city非空值的資料，其他drop，所以只會留下六都資訊
     df = df[df["city"].notna()].reset_index(drop=True)
 
-    # drop不需要的欄位
-    df = df.drop(columns=["license", "license_date", "vet", "service"])
+    # ------------------------------------------------------------
 
-    # 取得google key
-    API_KEY = os.getenv("OGLE_MAP_KEY_CHGWYELLOW")
+    # 執行合併ETL
+    host = os.getenv("MYSQL_IP")
+    port = int(os.getenv("MYSQL_PORTT"))
+    user = os.getenv("MYSQL_USERNAME")
+    password = os.getenv("MYSQL_PASSWORD")
+    db = os.getenv("MYSQL_DB_NAME")
+    id_sign = "hp"
+    API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
 
-    # 透過google api並傳送醫院名稱與地址取得醫院的place_id
-    result = []
-
-    # enumerate會自動將被iterate的物件附上index
-    for i, (idx, row) in enumerate(df.iterrows()):
-        query = f"{row['name']} {row['address']}"
-
-        result.append(gm.get_place_id(API_KEY, query))
-    df["place_id"] = np.nan
-    df.loc[:, "place_id"] = result
-
-    # 透過place_id找到詳細資料
-    result = []
-    for _, row in df.iterrows():
-        result.append(gmap_info(row["name"], API_KEY, row["place_id"]))
-
-    df_google = pd.DataFrame(result)
-
-    df_merged = df.merge(
-        df_google,
-        how="outer",
-        left_on=df["place_id"],
-        right_on=df_google["place_id"],
-        suffixes=["_filtered", "_checked"],
+    df_final = ed.gdata_etl(
+        df,
+        API_KEY,
+        host,
+        port,
+        user,
+        password,
+        db,
+        id_sign=id_sign,
+        save_path=processed_path,
     )
-
-    # 去除重複欄位
-    df_merged = df_merged.drop(columns=["place_id_filtered", "place_id_checked"])
-
-    # 去除重複的place_id
-    df_merged = df_merged.drop_duplicates(subset="key_0")
-
-    # 將欄位重新編排
-    # 名稱、地址與電話欄位排一起方便比對
-    revised_columns = [
-        "key_0",
-        "name_filtered",
-        "name_checked",
-        "address_filtered",
-        "address_checked",
-        "tel",
-        "phone",
-        "city",
-        "district",
-        "business_status",
-        "opening_hours",
-        "rating",
-        "rating_total",
-        "longitude",
-        "latitude",
-        "map_url",
-        "newest_review",
-    ]
-    df_merged = df_merged[revised_columns]
-
-    # 儲存ETL後的資料
-    if not df_merged.isna().any():
-        sd.store_to_csv_no_index(df_merged, processed_path)
-    else:
-        print(Fore.RED + "[✗] DataFrame內有空值，請檢查!")
-
-
-if __name__ == "__main__":
-    main()
