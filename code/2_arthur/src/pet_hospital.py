@@ -116,7 +116,7 @@ def gmap_info(ori_name, api_key, place_id):
     return place_info
 
 
-def main():
+if __name__ == "__main__":
     driver.get(URL)
     time.sleep(2)
 
@@ -171,7 +171,29 @@ def main():
     # 儲存原始CSV檔
     sd.store_to_csv_no_index(df, raw_path)
 
-    # 執行ETL
+    # 初步ETL
+    # 只保留name和address
+    need_columns = ["name", "address"]
+    df = df[need_columns]
+
+    # 移除:前面的資料
+    df["address"] = (
+        df["address"]
+        .str.split("：")
+        .str[-1]
+        .str.replace(" ", "", regex=False)
+        .str.strip()
+    )
+
+    # 執行正則表達比對並建立city, district欄位
+    df["city"], df["district"] = zip(*df["address"].apply(ed.extract_city_district))
+
+    # 只取出city非空值的資料，其他drop，所以只會留下六都資訊
+    df = df[df["city"].notna()].reset_index(drop=True)
+
+    # ------------------------------------------------------------
+
+    # 執行合併ETL
     host = os.getenv("MYSQL_IP")
     port = int(os.getenv("MYSQL_PORTT"))
     user = os.getenv("MYSQL_USERNAME")
@@ -191,7 +213,3 @@ def main():
         id_sign=id_sign,
         save_path=processed_path,
     )
-
-
-if __name__ == "__main__":
-    main()

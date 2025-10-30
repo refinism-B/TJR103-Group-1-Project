@@ -185,7 +185,6 @@ def gdata_etl(
     # ------------------------------------------------------------
     # 將最終結果儲存成csv檔
     # ------------------------------------------------------------
-    path = "data/processed/pet_hotel_ETL.csv"
-    sd.store_to_csv_no_index(df_final, path)
+    sd.store_to_csv_no_index(df_final, save_path)
 
     return df_final
