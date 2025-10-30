@@ -1,23 +1,16 @@
 import time
-import os
 import pandas as pd
-import googlemaps
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options
-from selenium.webdriver.common.by import By
 from selenium.common import exceptions
+from selenium.webdriver.common.by import By
 from mods import savedata as sd
-from mods import extractdata as ed
-from mods import gmap as gm
-from dotenv import load_dotenv
 
 # 設定Selenium找不到元素與屬性時的錯誤
 NoSuchElementException = exceptions.NoSuchElementException
 NoSuchAttributeException = exceptions.NoSuchAttributeException
 
-# 讀取.env檔案
-load_dotenv()
 
 URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
 raw_path = "data/raw/hospital_data.csv"
@@ -29,7 +22,6 @@ options.add_argument("user-agent=MyAgent/1.0")
 
 # 設定edge的driver
 driver = webdriver.Edge(options=options)
-
 
 if __name__ == "__main__":
     driver.get(URL)
@@ -85,46 +77,3 @@ if __name__ == "__main__":
 
     # 儲存原始CSV檔
     sd.store_to_csv_no_index(df, raw_path)
-
-    # 初步ETL
-    # 只保留name和address
-    need_columns = ["name", "address"]
-    df = df[need_columns]
-
-    # 移除:前面的資料
-    df["address"] = (
-        df["address"]
-        .str.split("：")
-        .str[-1]
-        .str.replace(" ", "", regex=False)
-        .str.strip()
-    )
-
-    # 執行正則表達比對並建立city, district欄位
-    df["city"], df["district"] = zip(*df["address"].apply(ed.extract_city_district))
-
-    # 只取出city非空值的資料，其他drop，所以只會留下六都資訊
-    df = df[df["city"].notna()].reset_index(drop=True)
-
-    # ------------------------------------------------------------
-
-    # 執行合併ETL
-    host = os.getenv("MYSQL_IP")
-    port = int(os.getenv("MYSQL_PORTT"))
-    user = os.getenv("MYSQL_USERNAME")
-    password = os.getenv("MYSQL_PASSWORD")
-    db = os.getenv("MYSQL_DB_NAME")
-    id_sign = "hp"
-    API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
-
-    df_final = ed.gdata_etl(
-        df,
-        API_KEY,
-        host,
-        port,
-        user,
-        password,
-        db,
-        id_sign=id_sign,
-        save_path=processed_path,
-    )
