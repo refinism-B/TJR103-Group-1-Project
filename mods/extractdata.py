@@ -5,12 +5,14 @@ Creator: Chgwyellow
 from mods import extractdata as ed
 """
 
+import ast
 import re
 import pandas as pd
 import numpy as np
 from mods import gmap as gm
 from mods import connectDB as connDB
 from mods import savedata as sd
+from mods import date_mod as dm
 from colorama import Fore
 
 
@@ -153,8 +155,9 @@ def gdata_etl(
     print(Fore.GREEN + "✅ id column has been serialized.")
 
     # ------------------------------------------------------------
-    # TODO 修改opening_time欄位
+    # 修改opening_time欄位
     # ------------------------------------------------------------
+    df_final["opening_hours"] = df["opening_hours"].apply(dm.trans_op_time_to_hours)
 
     # ------------------------------------------------------------
     # 調整欄位順序與名稱
@@ -188,3 +191,31 @@ def gdata_etl(
     sd.store_to_csv_no_index(df_final, save_path)
 
     return df_final
+
+
+def str_to_list(x: str) -> list:
+    """csv檔讀取list進來時會自動變成string，此函式可以將字串轉為list
+
+    Args:
+        x (str): 字串型態資料
+
+    Returns:
+        list: 經過處理後的list
+    """
+    try:
+        val = ast.literal_eval(x)
+
+        # ✅ 如果轉完是 list 且裡面第一個元素也是 list
+        # 表示外面多包了一層，要取第一層的內容
+        if isinstance(val, list) and len(val) == 1 and isinstance(val[0], list):
+            return val[0]
+
+        # ✅ 正常 list
+        if isinstance(val, list):
+            return val
+
+        # 不是 list，就包成 list
+        return [val]
+
+    except (ValueError, SyntaxError):
+        return [x]
