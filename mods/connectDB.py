@@ -71,7 +71,7 @@ def get_loc_table(conn, cursor) -> pd.DataFrame:
         cursor.execute(sql)
         loc = cursor.fetchall()
         df = pd.DataFrame(data=loc, columns=["loc_id", "city", "district"])
-        print(Fore.GREEN + "location資料已取回")
+        print(Fore.GREEN + "✅ location資料已取回")
         return df
     except pymysql.err.OperationalError as e:
         conn.rollback()
