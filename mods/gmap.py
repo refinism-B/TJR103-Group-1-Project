@@ -1,4 +1,6 @@
 from datetime import datetime
+import time
+import math
 
 import googlemaps
 from bs4 import BeautifulSoup
@@ -90,17 +92,54 @@ def get_place_id(api_key: str, keyword: str):
         return None
 
 
+def empty_object(ori_name, place_id=None):
+    return {
+        "name": ori_name,
+        "place_id": place_id,
+        "business_status": None,
+        "address": None,
+        "phone": None,
+        "opening_hours": None,
+        "types": None,
+        "rating": None,
+        "rating_total": None,
+        "longitude": None,
+        "latitude": None,
+        "map_url": None,
+        "website": None,
+        "newest_review": None,
+    }
+
+
+def place_id_na_or_not(place_id):
+    na_list = {None, "", "nan", "null", "na"}
+    if place_id is None:
+        return False
+    if isinstance(place_id, float) and math.isnan(place_id):
+        return False
+    if isinstance(place_id, str) and place_id.strip().lower() in na_list:
+        return False
+    return True
+
+
 def gmap_info(ori_name, api_key, place_id=None):
     """提供place_id，回傳名稱、營業狀態、營業時間、gmap評分、經緯度、gmap網址、最新評論日期"""
-    if place_id is not None:
-        gmaps = googlemaps.Client(key=api_key)
-        detail = gmaps.place(place_id=place_id, language="zh-TW")
+
+    if place_id_na_or_not(place_id):
+        try:
+            gmaps = googlemaps.Client(key=api_key)
+            detail = gmaps.place(place_id=place_id, language="zh-TW")
+
+        except Exception as e:
+            print(f"發生錯誤：{e}回傳空物件")
+            return empty_object(ori_name, place_id)
+
         name = detail.get("result", {}).get("name", None)
         business_status = detail.get("result", {}).get("business_status", None)
 
-        if detail["result"]["formatted_address"]:
+        if detail.get("result", {}).get("formatted_address"):
             address = detail.get("result", {}).get("formatted_address", None)
-        elif detail["result"]["adr_address"]:
+        elif detail.get("result", {}).get("adr_address"):
             address = BeautifulSoup(
                 detail.get("result", {}).get(
                     "adr_address", None), "html.parser"
@@ -109,8 +148,7 @@ def gmap_info(ori_name, api_key, place_id=None):
             address = None
 
         phone = detail.get("result", {}).get("formatted_phone_number", None)
-        if phone is not None:
-            phone = phone.replace(" ", "")
+        phone = phone.replace(" ", "") if phone else None
 
         opening_hours = (
             detail.get("result", {}).get(
@@ -157,22 +195,7 @@ def gmap_info(ori_name, api_key, place_id=None):
             "newest_review": newest_review,
         }
     else:
-        place_info = {
-            "name": ori_name,
-            "place_id": None,
-            "business_status": None,
-            "address": None,
-            "phone": None,
-            "opening_hours": None,
-            "types": None,
-            "rating": None,
-            "rating_total": None,
-            "longitude": None,
-            "latitude": None,
-            "map_url": None,
-            "website": None,
-            "newest_review": None,
-        }
+        place_info = empty_object(ori_name, place_id)
 
     return place_info
 
@@ -234,6 +257,7 @@ def gmap_nearby_search(key, lat, lon, radius, keyword):
             "name": place.get("name", None),
             "place_id": place.get("place_id", None),
             "buss_status": place.get("business_status", None),
+            "geometry": place.get("geometry", {}).get("location", None)
         }
         result_data.append(place_dict)
 
@@ -255,6 +279,7 @@ def gmap_nearby_search(key, lat, lon, radius, keyword):
                         "name": place.get("name", None),
                         "place_id": place.get("place_id", None),
                         "buss_status": place.get("business_status", None),
+                        "geometry": place.get("geometry", {}).get("location", None)
                     }
                     result_data.append(place_dict)
                 time.sleep(2.5)
