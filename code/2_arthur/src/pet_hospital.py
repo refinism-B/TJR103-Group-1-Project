@@ -25,14 +25,6 @@ URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
 raw_path = "data/raw/hospital_data.csv"
 processed_path = "data/processed/hospital_data_ETL.csv"
 
-host = os.getenv("MYSQL_IP")
-port = int(os.getenv("MYSQL_PORTT"))
-user = os.getenv("MYSQL_USERNAME")
-password = os.getenv("MYSQL_PASSWORD")
-db = os.getenv("MYSQL_DB_NAME")
-id_sign = "hp"
-API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
-
 # 對edge的options加上headers
 options = Options()
 options.add_argument("user-agent=MyAgent/1.0")
@@ -180,6 +172,14 @@ def main():
     sd.store_to_csv_no_index(df, raw_path)
 
     # 執行ETL
+    host = os.getenv("MYSQL_IP")
+    port = int(os.getenv("MYSQL_PORTT"))
+    user = os.getenv("MYSQL_USERNAME")
+    password = os.getenv("MYSQL_PASSWORD")
+    db = os.getenv("MYSQL_DB_NAME")
+    id_sign = "hp"
+    API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
+
     df_final = ed.gdata_etl(
         df,
         API_KEY,

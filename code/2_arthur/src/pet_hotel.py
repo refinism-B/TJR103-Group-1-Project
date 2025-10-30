@@ -15,14 +15,6 @@ if __name__ == "__main__":
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
     }
 
-    host = os.getenv("MYSQL_IP")
-    port = int(os.getenv("MYSQL_PORTT"))
-    user = os.getenv("MYSQL_USERNAME")
-    password = os.getenv("MYSQL_PASSWORD")
-    db = os.getenv("MYSQL_DB_NAME")
-    id_sign = "ht"
-    API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
-
     # 讀取API檔案
     df = rd.get_json_data_no_verify(url)
 
@@ -31,6 +23,14 @@ if __name__ == "__main__":
     sd.store_to_csv_no_index(df=df, path=raw_path)
 
     # 執行ETL
+    host = os.getenv("MYSQL_IP")
+    port = int(os.getenv("MYSQL_PORTT"))
+    user = os.getenv("MYSQL_USERNAME")
+    password = os.getenv("MYSQL_PASSWORD")
+    db = os.getenv("MYSQL_DB_NAME")
+    id_sign = "ht"
+    API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
+
     processed_path = "data/processed/pet_hotel_ETL.csv"
     df_final = ed.gdata_etl(
         df,
