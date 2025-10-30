@@ -110,12 +110,14 @@ def clean_google_data(
     # 讀取location表格的資料並轉成DataFrame
     df_loc = connDB.get_loc_table(conn, cursor)
 
+    # 關閉資料庫連接釋放資源
+    cursor.close()
+    conn.close()
+
     # merge df_merged和df_loc
     df_final = df_merged.merge(
         df_loc, left_on="district", right_on="district", how="left"
     )
-    df_final = df_final.drop(columns=["city_y"])
-    df_final = df_final.rename(columns={"city_x": "city"})
 
     # 重新編排columns順序
     columns = [
@@ -128,16 +130,18 @@ def clean_google_data(
         "loc_id",
         "business_status",
         "opening_hours",
+        "types",
         "rating",
         "rating_total",
         "longitude",
         "latitude",
         "map_url",
+        "website",
         "newest_review",
     ]
     df_final = df_final[columns]
 
-    cursor.close()
-    conn.close()
+    # 修改欄位名稱key_0 -> place_id
+    df_final = df_final.rename(columns={"key_0": "place_id"})
 
     return df_final
