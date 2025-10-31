@@ -49,7 +49,7 @@ DROP TABLE IF EXISTS Hotel;
 CREATE TABLE Hotel(
 	hotel_id VARCHAR(20) NOT NULL COMMENT '寵物旅館id',
 	place_id VARCHAR(50) NOT NULL COMMENT 'gmap的id',
-	name VARCHAR(100) NOT NULL COMMENT '寵旅名稱',
+	name VARCHAR(150) NOT NULL COMMENT '寵旅名稱',
 	address VARCHAR(150) NOT NULL COMMENT '寵旅地址',
 	phone VARCHAR(15) COMMENT '寵旅電話',
 	city VARCHAR (15) NOT NULL COMMENT '寵旅所在市',

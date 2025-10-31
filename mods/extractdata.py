@@ -35,27 +35,34 @@ def extract_city_district(address: str) -> tuple[str, str]:
     return None, None
 
 
-def gdata_etl(
-    df: pd.DataFrame,
-    api_key: str,
-    host: str,
-    port: int,
-    user: str,
-    password: str,
-    db: str,
-    id_sign: str,
-    save_path: str,
-) -> pd.DataFrame:
+def extract_city_district_from_df(df: pd.DataFrame, address_col: str) -> pd.DataFrame:
+    """從 DataFrame 的地址欄位提取城市和地區資訊
+
+    Args:
+        df (pd.DataFrame): 要處理的 DataFrame
+        address_col (str): 地址欄位名稱
+
+    Returns:
+        pd.DataFrame: 添加 city 和 district 欄位後的 DataFrame
+    """
+    # 使用 zip 和 apply 提取城市與地區
+    df["city"], df["district"] = zip(*df[address_col].apply(extract_city_district))
+
+    # 只保留有城市資訊的資料列(六都)
+    df = df[df["city"].notna()].reset_index(drop=True)
+
+    return df
+
+
+def gdata_etl(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFrame:
     """
     清理與補充 Google 寵物旅館資料
     使用前請確認傳入的df欄位只有name, address, city和district
     ------------------------------------------------------------
     1. 透過 Google API 補上 place_id 與詳細資訊
     2. 篩選出營業中的商家 (business_status == "OPERATIONAL")
-    3. 整理欄位順序、補空值、產生 hotel_id
-    4. 與 location 表格合併 loc_id
+    3. 整理欄位順序、補空值並儲存資料
     """
-
     # ------------------------------------------------------------
     # 取得 place_id
     # ------------------------------------------------------------
@@ -101,6 +108,11 @@ def gdata_etl(
     if "key_0" in df_merged.columns and "place_id" not in df_merged.columns:
         df_merged.rename(columns={"key_0": "place_id"}, inplace=True)
 
+    # 填補空值
+    fillna_columns = ["opening_hours", "rating", "rating_total"]
+    df_merged[fillna_columns] = df_merged[fillna_columns].fillna(0)
+    print(Fore.GREEN + "✅ Columns have been sorted and fill the missing value.")
+
     # 修改columns順序
     revised_columns = [
         "place_id",
@@ -120,11 +132,33 @@ def gdata_etl(
     ]
     df_merged = df_merged[revised_columns].drop_duplicates(subset=["place_id"])
 
-    # 填補空值
-    fillna_columns = ["opening_hours", "rating", "rating_total", "newest_review"]
-    df_merged[fillna_columns] = df_merged[fillna_columns].fillna(0)
-    print(Fore.GREEN + "✅ Columns have been sorted and fill the missing value.")
+    # 儲存google爬下來的初步檔案
+    sd.store_to_csv_no_index(df_merged, save_path)
 
+    return df_merged
+
+
+def merge_loc(
+    df: pd.DataFrame,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    db: str,
+) -> pd.DataFrame:
+    """讀取DB中的location表並合併
+
+    Args:
+        df (pd.DataFrame): 經過google data合併的df
+        host (str): 主機名稱
+        port (int): port號
+        user (str): 使用者名稱
+        password (str): 使用者密碼
+        db (str): 資料庫名稱
+
+    Returns:
+        pd.DataFrame: 合併location後的df
+    """
     # ------------------------------------------------------------
     # 從資料庫讀取 location 表格
     # ------------------------------------------------------------
@@ -139,31 +173,53 @@ def gdata_etl(
     # ------------------------------------------------------------
     # 與 location 表格合併 (加入 loc_id)
     # ------------------------------------------------------------
-    df_final = df_merged.merge(
+    df_final = df.merge(
         df_loc, left_on=["city", "district"], right_on=["city", "district"], how="left"
     )
+    # 依照city和district排序
     df_final = df_final.sort_values(["city", "district"])
     print(Fore.GREEN + "✅ Location table has been merged with the original data.")
 
+    return df_final
+
+
+def create_id(df: pd.DataFrame, id_sign: str) -> pd.DataFrame:
+    """產生id號碼
+
+    Args:
+        df (pd.DataFrame): 經過location表格合併的df
+        id_sign (str): id開頭文字
+
+    Returns:
+        pd.DataFrame: 含有id欄位的df
+    """
     # ------------------------------------------------------------
     # 產生 id（例如：ht0001, ht0002...）
     # ------------------------------------------------------------
-    df_final["id"] = np.nan
-    num_hotel_id = df_final["id"].isna().sum()
-    new_ids = [f"{id_sign}{str(i).zfill(4)}" for i in range(1, num_hotel_id + 1)]
-    df_final.loc[:, "id"] = new_ids
+    df["id"] = np.nan
+    num_id = df["id"].isna().sum()
+    new_ids = [f"{id_sign}{str(i).zfill(4)}" for i in range(1, num_id + 1)]
+    df.loc[:, "id"] = new_ids
     print(Fore.GREEN + "✅ id column has been serialized.")
 
-    # ------------------------------------------------------------
-    # 修改opening_time欄位
-    # ------------------------------------------------------------
-    df_final["opening_hours"] = df["opening_hours"].apply(dm.trans_op_time_to_hours)
+    return df
 
+
+def to_sql_data(df: pd.DataFrame, save_path: str):
+    """調整欄位順序與儲存最終檔案
+
+    Args:
+        df (pd.DataFrame): 含有id的df，請確認opening_hour欄位已改成數字且空值已轉換
+        save_path (str): 儲存路徑
+
+    Returns:
+        _type_: 可以寫入DB的df
+    """
     # ------------------------------------------------------------
     # 調整欄位順序與名稱
     # ------------------------------------------------------------
     final_columns = [
-        "hotel_id",
+        "id",
         "place_id",
         "name_checked",
         "address_checked",
@@ -182,7 +238,7 @@ def gdata_etl(
         "website",
         "newest_review",
     ]
-    df_final = df_final[final_columns]
+    df_final = df[final_columns]
     print(Fore.GREEN + "✅ Final table has finished.")
 
     # ------------------------------------------------------------
@@ -219,3 +275,36 @@ def str_to_list(x: str) -> list:
 
     except (ValueError, SyntaxError):
         return [x]
+
+
+def to_phone(df: pd.DataFrame) -> pd.DataFrame:
+    """因為csv讀進來時，會將phone轉成數字格式
+    此函示可以將df裡面的phone欄位轉成電話格式
+
+    Args:
+        df (pd.DataFrame): 要修正的df
+
+    Returns:
+        pd.DataFrame: 修正後的df
+    """
+    df["phone"] = df["phone"].apply(lambda x: f"0{int(x)}" if pd.notna(x) else x)
+    print(Fore.GREEN + "✅ 手機格式已轉換完成")
+    return df
+
+
+def to_sql_null(x):
+    """將pandas的空值轉為Python的None
+
+    Args:
+        x (_type_): 傳入的欄位值
+
+    Returns:
+        None: 就是None
+    """
+    if pd.isna(x):
+        return None
+    s = str(x).strip()
+
+    if s.lower() in ("nan", "none", ""):
+        return None
+    return x
