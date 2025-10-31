@@ -251,6 +251,63 @@ def create_id(df: pd.DataFrame, id_sign: str, save_path: str) -> pd.DataFrame:
     return df
 
 
+def cat_id(
+    df: pd.DataFrame,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    db: str,
+    save_path: str,
+) -> pd.DataFrame:
+    # 連線DB
+    conn, cursor = connDB.connect_db(host, port, user, password, db)
+    # 讀取category表格的資料
+    sql = """
+    select category_id
+    from Category
+    where category_eng = 'hotel';
+    """
+    cursor.execute(sql)
+    cat = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    print(Fore.GREEN + "✅ Cursor and connection have been closed.")
+
+    # 轉成df
+    df_cat = pd.DataFrame(data=cat, columns=["category_id"])
+
+    # 原本的df創立一個cat_id並賦值
+    df["cat_id"] = df_cat["category_id"].iloc[0]
+
+    # 調整欄位
+    columns = [
+        "hotel_id",
+        "place_id",
+        "name_checked",
+        "address_checked",
+        "phone",
+        "city",
+        "district",
+        "loc_id",
+        "business_status",
+        "opening_hours",
+        "cat_id",
+        "types",
+        "rating",
+        "rating_total",
+        "longitude",
+        "latitude",
+        "map_url",
+        "website",
+        "newest_review",
+    ]
+    df = df[columns]
+    sd.store_to_csv_no_index(df, save_path)
+
+    return df
+
+
 def to_sql_data(df: pd.DataFrame, save_path: str):
     """調整欄位順序與儲存最終檔案
 

@@ -15,6 +15,10 @@ df = rd.get_csv_data("data/processed/hospital_data_final.csv")
 # csv讀取後手機格式會跑掉，透過函式做轉換
 df = ed.to_phone(df)
 
+# 避免空值
+for col in df.columns:
+    df[col] = df[col].apply(ed.to_sql_null)
+
 # 設定資料庫連線
 host = os.getenv("MYSQL_IP")
 port = int(os.getenv("MYSQL_PORTT"))
