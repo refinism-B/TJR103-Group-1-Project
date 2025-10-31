@@ -10,10 +10,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # csv檔路徑
-df = rd.get_csv_data("data/processed/pet_hotel_ETL.csv")
+df = rd.get_csv_data("data/processed/hotel_data_final.csv")
 
 # csv讀取後手機格式會跑掉，透過函式做轉換
 df = ed.to_phone(df)
+
+# 避免空值
+for col in df.columns:
+    df[col] = df[col].apply(ed.to_sql_null)
 
 # 設定資料庫連線
 host = os.getenv("MYSQL_IP")
@@ -31,13 +35,11 @@ try:
     for _, row in df.iterrows():
         sql = """
         INSERT INTO Hotel (
-            hotel_id, place_id, name, address, phone, city, district, loc_id,
-            business_status, opening_hours, types, rating, rating_total,
-            longitude, latitude, map_url, website, newest_review
+            hotel_id, place_id, name, address, phone, city, district, loc_id, business_status, op_hours, cat_id, types, rating, rating_total, longitude, latitude, map_url, website, newest_review
         )
         VALUES (
             %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, %s,
             %s, %s, %s, %s, %s
         );
         """

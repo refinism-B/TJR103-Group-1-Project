@@ -56,7 +56,8 @@ CREATE TABLE Hotel(
 	district VARCHAR(30) NOT NULL COMMENT '寵旅所在區',
 	loc_id VARCHAR(30) NOT NULL COMMENT '市區的id',
 	business_status VARCHAR(30) NOT NULL COMMENT '營業狀態',
-	opening_hours INT NOT NULL COMMENT '營業時長',
+	op_hours INT NOT NULL COMMENT '營業時長',
+	cat_id INT NOT NULL COMMENT '類別id',
 	types VARCHAR(200) COMMENT '機構種類',
 	rating DECIMAL(2, 1) NOT NULL COMMENT '評論星數',
 	rating_total INT NOT NULL COMMENT '評論數量',
@@ -70,4 +71,5 @@ CREATE TABLE Hotel(
 	-- CONSTRAINT
 	PRIMARY KEY(hotel_id)
 -- 	FOREIGN KEY(loc_id) REFERENCES location(loc_id)
+-- 	FOREIGN KEY(cat_id) REFERENCES category(category_id)
 ) COMMENT = '寵物旅館資料表';
