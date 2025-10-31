@@ -54,14 +54,12 @@ def extract_city_district_from_df(df: pd.DataFrame, address_col: str) -> pd.Data
     return df
 
 
-def gdata_etl(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFrame:
+def gdata_place_id(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFrame:
     """
     清理與補充 Google 寵物旅館資料
     使用前請確認傳入的df欄位只有name, address, city和district
     ------------------------------------------------------------
-    1. 透過 Google API 補上 place_id 與詳細資訊
-    2. 篩選出營業中的商家 (business_status == "OPERATIONAL")
-    3. 整理欄位順序、補空值並儲存資料
+    1. 透過 Google API 補上 place_id
     """
     # ------------------------------------------------------------
     # 取得 place_id
@@ -75,13 +73,22 @@ def gdata_etl(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFrame:
     df.loc[:, "place_id"] = place_ids
     df_filtered = df.dropna(subset="place_id")
     print(Fore.GREEN + "✅ place_id has been found.")
+    # 儲存google爬下來含有place_id的檔案
+    sd.store_to_csv_no_index(df_filtered, save_path)
+    return df_filtered
 
+
+def gdata_info(df: pd.DataFrame, api_key: str, save_path: str):
+    """
+    1. 透過 Google API 補上詳細資訊
+    2. 篩選出營業中的商家 (business_status == "OPERATIONAL")
+    3. 整理欄位順序、補空值並儲存資料
+    """
     # ------------------------------------------------------------
     # 取得 Google Maps 詳細資料
     # ------------------------------------------------------------
     detailed_results = [
-        gm.gmap_info(row["name"], api_key, row["place_id"])
-        for _, row in df_filtered.iterrows()
+        gm.gmap_info(row["name"], api_key, row["place_id"]) for _, row in df.iterrows()
     ]
     df_checked = pd.DataFrame(detailed_results).dropna(subset=["place_id"])
     print(Fore.GREEN + "✅ Google details have been found.")
@@ -89,15 +96,29 @@ def gdata_etl(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFrame:
     # ------------------------------------------------------------
     # 合併原始資料與 Google API 詳細資料
     # ------------------------------------------------------------
-    df_merged = df_filtered.merge(
+    df_merged = df.merge(
         df_checked,
         on="place_id",
         how="outer",
         suffixes=("_filtered", "_checked"),
     )
+    # 儲存google爬下來含有詳細資料的檔案
+    sd.store_to_csv_no_index(df_merged, save_path)
+    return df_merged
 
+
+def clean_sort(df: pd.DataFrame, save_path: str):
+    """business_status為營業中，整理欄位名稱與補空值
+
+    Args:
+        df (pd.DataFrame): 取的google詳細資料的df
+        save_path (str): 儲存路徑
+
+    Returns:
+        _type_: 整理後的df
+    """
     # 保留營業中的旅館
-    df_merged = df_merged[df_merged["business_status"] == "OPERATIONAL"]
+    df_merged = df[df["business_status"] == "OPERATIONAL"]
     print(Fore.GREEN + "✅ Successfully merged the original data with the google data.")
 
     # ------------------------------------------------------------
@@ -132,7 +153,28 @@ def gdata_etl(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFrame:
     ]
     df_merged = df_merged[revised_columns].drop_duplicates(subset=["place_id"])
 
-    # 儲存google爬下來的初步檔案
+    # ------------------------------------------------------------
+    # 修改opening_hours欄位
+    # TODO 確認dm的時間轉換函式正確
+    # ------------------------------------------------------------
+    # csv讀進來時list會被轉成字串，所以先將str轉成list
+    df_merged["opening_hours"] = df_merged["opening_hours"].apply(str_to_list)
+    df_merged.loc[:, "opening_hours"] = df_merged["opening_hours"].apply(
+        dm.trans_op_time_to_hours
+    )
+
+    # ------------------------------------------------------------
+    # 轉換pd空值
+    # ------------------------------------------------------------
+    for col in df_merged.columns:
+        df_merged[col] = df_merged[col].apply(to_sql_null)
+
+    # types欄位解開list
+    df_merged["types"] = df_merged["types"].apply(
+        lambda x: ",".join(x) if isinstance(x, list) else ""
+    )
+
+    # 儲存修改後的檔案
     sd.store_to_csv_no_index(df_merged, save_path)
 
     return df_merged
@@ -145,6 +187,7 @@ def merge_loc(
     user: str,
     password: str,
     db: str,
+    save_path: str,
 ) -> pd.DataFrame:
     """讀取DB中的location表並合併
 
@@ -155,7 +198,7 @@ def merge_loc(
         user (str): 使用者名稱
         password (str): 使用者密碼
         db (str): 資料庫名稱
-
+        save_path (str): 儲存路徑
     Returns:
         pd.DataFrame: 合併location後的df
     """
@@ -180,15 +223,18 @@ def merge_loc(
     df_final = df_final.sort_values(["city", "district"])
     print(Fore.GREEN + "✅ Location table has been merged with the original data.")
 
+    # 儲存修改後的檔案
+    sd.store_to_csv_no_index(df_final, save_path)
     return df_final
 
 
-def create_id(df: pd.DataFrame, id_sign: str) -> pd.DataFrame:
+def create_id(df: pd.DataFrame, id_sign: str, save_path: str) -> pd.DataFrame:
     """產生id號碼
 
     Args:
         df (pd.DataFrame): 經過location表格合併的df
         id_sign (str): id開頭文字
+        save_path (str): 儲存路徑
 
     Returns:
         pd.DataFrame: 含有id欄位的df
