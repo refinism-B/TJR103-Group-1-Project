@@ -1,4 +1,6 @@
 from datetime import time, date, datetime, timedelta
+import pandas as pd
+import ast
 
 """
 這個模組是關於時間或日期應用的自訂函式
@@ -24,15 +26,16 @@ def count_hours(time_str: str):
     return hours
 
 
-def trans_op_time_to_hours(op_time: list):
+def trans_op_time_to_hours(op_time):
     """輸入營業時間list，會逐日計算營業時間並加總後回傳
     僅適用google map營業時間格式"""
 
     # 若沒有營業時間，則時數直接為0
     if op_time is None:
         op_hours = 0
-    elif op_time.lower() == "nan":
+    elif str(op_time).lower() == "nan":
         op_hours = 0
+
     # 若有營業時間，則逐日計算時數後相加
     else:
         op_hours = 0
@@ -65,3 +68,14 @@ def trans_op_time_to_hours(op_time: list):
             op_hours += hours
 
     return op_hours
+
+
+def trans_ophours_columns(value):
+    if pd.isna(value):
+        return "NaN"
+    elif value == "NaN":
+        return value
+    try:
+        return ast.literal_eval(value)
+    except (ValueError, SyntaxError):
+        return "NaN"
