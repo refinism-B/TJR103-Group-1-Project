@@ -53,8 +53,11 @@ if __name__ == "__main__":
 
     # ------------------------------------------------------------
     # 修改opening_hours欄位
+    # TODO 確認dm的時間轉換函式正確
     # ------------------------------------------------------------
-    df_google["opening_hours"] = df_google["opening_hours"].apply(
+    # csv讀進來時list會被轉成字串，所以先將str轉成list
+    df_google["opening_hours"] = df_google["opening_hours"].apply(ed.str_to_list)
+    df_google.loc[:, "opening_hours"] = df_google["opening_hours"].apply(
         dm.trans_op_time_to_hours
     )
 
@@ -63,6 +66,11 @@ if __name__ == "__main__":
     # ------------------------------------------------------------
     for col in df_google.columns:
         df_google[col] = df_google[col].apply(ed.to_sql_null)
+
+    # types欄位解開list
+    df_google["types"] = df_google["types"].apply(
+        lambda x: ",".join(x) if isinstance(x, list) else ""
+    )
 
     # 與location表合併
     df_merged = ed.merge_loc(df_google, host, port, user, password, db)
