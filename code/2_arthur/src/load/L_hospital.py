@@ -35,13 +35,11 @@ try:
     for _, row in df.iterrows():
         sql = """
         INSERT INTO Hospital (
-            hospital_id, place_id, name, address, phone, city, district, loc_id,
-            business_status, opening_hours, types, rating, rating_total,
-            longitude, latitude, map_url, website, newest_review
+            hospital_id, place_id, name, address, phone, city, district, loc_id, business_status, op_hours, cat_id, types, rating, rating_total, longitude, latitude, map_url, website, newest_review
         )
         VALUES (
             %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s, %s,
             %s, %s, %s, %s, %s
         );
         """

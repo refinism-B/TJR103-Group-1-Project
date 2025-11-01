@@ -67,12 +67,12 @@ def gdata_place_id(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFra
     place_ids = []
     for _, row in df.iterrows():
         query = f"{row['name']} {row['address']}"
+        print(Fore.GREEN + f"✅ place_id{_} has been found.")
         place_ids.append(gm.get_place_id(api_key, query))
     # 未避免place_id長度與df不同，先創建欄位後再填入資料
     df["place_id"] = np.nan
     df.loc[:, "place_id"] = place_ids
     df_filtered = df.dropna(subset="place_id")
-    print(Fore.GREEN + "✅ place_id has been found.")
     # 儲存google爬下來含有place_id的檔案
     sd.store_to_csv_no_index(df_filtered, save_path)
     return df_filtered
@@ -144,11 +144,13 @@ def clean_sort(df: pd.DataFrame, save_path: str):
         "district",
         "business_status",
         "opening_hours",
+        "types",
         "rating",
         "rating_total",
         "longitude",
         "latitude",
         "map_url",
+        "website",
         "newest_review",
     ]
     df_merged = df_merged[revised_columns].drop_duplicates(subset=["place_id"])
@@ -169,10 +171,10 @@ def clean_sort(df: pd.DataFrame, save_path: str):
     for col in df_merged.columns:
         df_merged[col] = df_merged[col].apply(to_sql_null)
 
-    # types欄位解開list
-    df_merged["types"] = df_merged["types"].apply(
-        lambda x: ",".join(x) if isinstance(x, list) else ""
-    )
+    # # types欄位解開list
+    # df_merged.loc[:, "types"] = df_merged["types"].apply(
+    #     lambda x: ",".join(x) if isinstance(x, list) else ""
+    # )
 
     # 儲存修改後的檔案
     sd.store_to_csv_no_index(df_merged, save_path)
@@ -217,7 +219,7 @@ def merge_loc(
     # 與 location 表格合併 (加入 loc_id)
     # ------------------------------------------------------------
     df_final = df.merge(
-        df_loc, left_on=["city", "district"], right_on=["city", "district"], how="left"
+        df_loc, left_on=["city", "district"], right_on=["city", "district"], how="inner"
     )
     # 依照city和district排序
     df_final = df_final.sort_values(["city", "district"])
@@ -242,6 +244,10 @@ def create_id(df: pd.DataFrame, id_sign: str, save_path: str) -> pd.DataFrame:
     # ------------------------------------------------------------
     # 產生 id（例如：ht0001, ht0002...）
     # ------------------------------------------------------------
+    # 統一台->臺
+    df["city"] = df["city"].str.replace("台", "臺")
+    # 排序
+    df = df.sort_values(["city", "district"])
     df["id"] = np.nan
     num_id = df["id"].isna().sum()
     new_ids = [f"{id_sign}{str(i).zfill(4)}" for i in range(1, num_id + 1)]
@@ -260,14 +266,15 @@ def cat_id(
     password: str,
     db: str,
     save_path: str,
+    category: str,
 ) -> pd.DataFrame:
     # 連線DB
     conn, cursor = connDB.connect_db(host, port, user, password, db)
     # 讀取category表格的資料
-    sql = """
+    sql = f"""
     select category_id
     from Category
-    where category_eng = 'hotel';
+    where category_eng = '{category}';
     """
     cursor.execute(sql)
     cat = cursor.fetchall()
@@ -333,6 +340,7 @@ def to_sql_data(df: pd.DataFrame, save_path: str):
         "loc_id",
         "business_status",
         "opening_hours",
+        "cat_id",
         "types",
         "rating",
         "rating_total",
@@ -391,7 +399,9 @@ def to_phone(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: 修正後的df
     """
-    df["phone"] = df["phone"].apply(lambda x: f"0{int(x)}" if pd.notna(x) else x)
+    df["phone"] = df["phone"].apply(
+        lambda x: f"0{int(x)}" if pd.notna(x) and str(x).isdigit() else x
+    )
     print(Fore.GREEN + "✅ 手機格式已轉換完成")
     return df
 

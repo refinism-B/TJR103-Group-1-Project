@@ -20,4 +20,4 @@ if __name__ == "__main__":
     df = rd.get_csv_data(raw_path)
 
     # 與category表合併並產生cat_id
-    df = ed.cat_id(df, host, port, user, password, db, processed_path)
+    df = ed.cat_id(df, host, port, user, password, db, processed_path, "hospital")
