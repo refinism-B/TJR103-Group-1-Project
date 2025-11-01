@@ -247,6 +247,7 @@ def create_id(df: pd.DataFrame, id_sign: str, save_path: str) -> pd.DataFrame:
     new_ids = [f"{id_sign}{str(i).zfill(4)}" for i in range(1, num_id + 1)]
     df.loc[:, "id"] = new_ids
     print(Fore.GREEN + "✅ id column has been serialized.")
+    sd.store_to_csv_no_index(df, save_path)
 
     return df
 
@@ -282,7 +283,7 @@ def cat_id(
 
     # 調整欄位
     columns = [
-        "hotel_id",
+        "id",
         "place_id",
         "name_checked",
         "address_checked",
