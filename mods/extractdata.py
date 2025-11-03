@@ -272,7 +272,7 @@ def cat_id(
     # 讀取category表格的資料
     sql = f"""
     select category_id
-    from Category
+    from category
     where category_eng = '{category}';
     """
     cursor.execute(sql)
