@@ -8,6 +8,10 @@ import re
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
+from sqlalchemy import create_engine
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 GOOGLE_API_KEY = "AIzaSyAKD_bSB7Z26zBK1JN2yVdTXOxDNEfznQo"
@@ -48,7 +52,7 @@ def get_place_info(name, address):
 def get_place_details(place_id):
     params = {
         "place_id": place_id,
-        "fields": "rating,user_ratings_total,opening_hours,current_opening_hours,reviews,url",
+        "fields": "rating,user_ratings_total,opening_hours,current_opening_hours,reviews,url,business_status",
         "language": "zh-TW",
         "key": GOOGLE_API_KEY,
     }
@@ -60,9 +64,13 @@ def get_place_details(place_id):
     if result.get("opening_hours") and "weekday_text" in result["opening_hours"]:
         opening_hours = "; ".join(result["opening_hours"]["weekday_text"])
 
-    is_open_now = None
-    if result.get("current_opening_hours") and "open_now" in result["current_opening_hours"]:
-        is_open_now = "營業中" if result["current_opening_hours"]["open_now"] else "休息中"
+    # ✅ 改用 business_status
+    business_status_map = {
+        "OPERATIONAL": "營業中",
+        "CLOSED_TEMPORARILY": "暫時關閉",
+        "CLOSED_PERMANENTLY": "永久停業"
+    }
+    business_status = business_status_map.get(result.get("business_status"), None)
 
     latest_review_time = None
     if result.get("reviews"):
@@ -76,7 +84,7 @@ def get_place_details(place_id):
         "rating": result.get("rating"),
         "user_ratings_total": result.get("user_ratings_total"),
         "opening_hours": opening_hours,
-        "is_open_now": is_open_now,
+        "business_status": business_status,
         "latest_review_time": latest_review_time,
         "gmap_url": gmap_url
     }
@@ -87,20 +95,40 @@ def parse_opening_hours(opening_hours_str):
     total_hours = 0.0
     for day_info in opening_hours_str.split("; "):
         try:
+            # 範例: "星期一: 休息" 或 "星期二: 10:00–12:00, 14:00–16:00"
             parts = day_info.split(": ")
             if len(parts) != 2:
                 continue
-            time_ranges = parts[1].split(", ")
+
+            day_label, time_part = parts[0], parts[1]
+
+            # ✅ 若包含休息、未營業、無資料則略過
+            if any(kw in time_part for kw in ["休息", "未營業", "公休", "不營業"]):
+                continue
+
+            # ✅ 確保時間區段有 "–"
+            time_ranges = [r.strip() for r in time_part.split(",") if "–" in r]
             for time_range in time_ranges:
-                start_str, end_str = time_range.split("–")
-                start = datetime.strptime(start_str.strip(), "%H:%M")
-                end = datetime.strptime(end_str.strip(), "%H:%M")
-                duration = (end - start).seconds / 3600
-                total_hours += duration
+                try:
+                    start_str, end_str = [t.strip() for t in time_range.split("–")]
+                    start = datetime.strptime(start_str, "%H:%M")
+                    end = datetime.strptime(end_str, "%H:%M")
+
+                    # 若跨午夜，補一天
+                    if end < start:
+                        end = end.replace(day=start.day + 1)
+
+                    duration = (end - start).seconds / 3600
+                    total_hours += duration
+                except Exception as inner_e:
+                    print(f"⚠️ 無法解析時間段：{day_info} - {inner_e}")
+                    continue
         except Exception as e:
             print(f"⚠️ 無法解析時間段：{day_info} - {e}")
             continue
+
     return round(total_hours, 2)
+
 
 def enrich_with_google_info(row):
     name, addr = row["收容所名稱"], row["地址"]
@@ -129,7 +157,7 @@ def enrich_with_google_info(row):
             "Place ID": place_info["place_id"],
             "經度": place_info["lng"],
             "緯度": place_info["lat"],
-            "營業狀態": details["is_open_now"],
+            "營業狀態": details["business_status"],  # ✅ 改這裡
             "最新評論日期": details["latest_review_time"],
             "GMap 網址": details["gmap_url"]
         }
@@ -228,5 +256,25 @@ def main():
     open_file(output_file)
     print("🪟 已自動開啟輸出檔案")
 
+    return df
+
 if __name__ == "__main__":
-    main()
+    df = main()
+
+
+# === 將資料寫入 MySQL ===
+username = os.getenv("MYSQL_USERNAME")
+password = os.getenv("MYSQL_PASSWORD")
+target_ip = os.getenv("MYSQL_IP")
+target_port = int(os.getenv("MYSQL_PORTT"))
+db_name = os.getenv("MYSQL_DB_NAME")
+
+engine = create_engine(f"mysql+pymysql://{username}:{password}@{target_ip}:{target_port}/{db_name}")
+
+try:
+    df.to_sql(name="pet_shelter", con=engine, if_exists="replace", index=False)
+    print("✅ 已成功匯入至 MySQL 資料表：pet_shelter")
+except Exception as e:
+    print(f"❌ 匯入 MySQL 失敗：{e}")
+
+
