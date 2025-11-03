@@ -35,6 +35,8 @@ def trans_op_time_to_hours(op_time):
         op_hours = 0
     elif str(op_time).lower() == "nan":
         op_hours = 0
+    elif op_time == 0:
+        op_hours = 0
 
     # 若有營業時間，則逐日計算時數後相加
     else:
