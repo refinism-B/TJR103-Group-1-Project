@@ -330,24 +330,21 @@ def to_sql_data(df: pd.DataFrame, save_path: str):
     # ------------------------------------------------------------
     final_columns = [
         "id",
-        "place_id",
         "name_checked",
+        "business_status",
+        "loc_id",
         "address_checked",
         "phone",
-        "city",
-        "district",
-        "loc_id",
-        "business_status",
         "opening_hours",
         "cat_id",
-        "types",
         "rating",
         "rating_total",
+        "newest_review",
         "longitude",
         "latitude",
         "map_url",
         "website",
-        "newest_review",
+        "place_id",
     ]
     df_final = df[final_columns]
     print(Fore.GREEN + "✅ Final table has finished.")
