@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 # 讀取.env檔案
 load_dotenv()
 
-raw_path = "data/processed/hotel_data_detail.csv"
-processed_path = "data/processed/hotel_data_cleaned.csv"
+raw_path = "data/processed/hotel/hotel_data_detail.csv"
+processed_path = "data/processed/hotel/hotel_data_cleaned.csv"
 
 if __name__ == "__main__":
     # 讀取原始檔案

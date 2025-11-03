@@ -9,8 +9,8 @@ load_dotenv()
 
 API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
 
-raw_path = "data/processed/hotel_data_c_d.csv"
-processed_path = "data/processed/hotel_data_place_id.csv"
+raw_path = "data/processed/hotel/hotel_data_c_d.csv"
+processed_path = "data/processed/hotel/hotel_data_place_id.csv"
 
 if __name__ == "__main__":
     # 讀取原始檔案

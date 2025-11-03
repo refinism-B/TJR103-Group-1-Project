@@ -157,7 +157,6 @@ def clean_sort(df: pd.DataFrame, save_path: str):
 
     # ------------------------------------------------------------
     # 修改opening_hours欄位
-    # TODO 確認dm的時間轉換函式正確
     # ------------------------------------------------------------
     # csv讀進來時list會被轉成字串，所以先將str轉成list
     df_merged["opening_hours"] = df_merged["opening_hours"].apply(str_to_list)
