@@ -1,6 +1,7 @@
 import os
 import time
 import pandas as pd
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -8,6 +9,10 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+from sqlalchemy import create_engine
+
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
 
 # === 設定下載資料夾 ===
 download_dir = os.path.join(os.getcwd(), "downloads")
@@ -97,7 +102,14 @@ try:
 
         df = df.dropna(subset=["行政區"])
         df = df[~df["行政區"].astype(str).str.contains("合計|總計|註|^說明")]
-        df["行政區"] = df["行政區"].astype(str).str.replace("※", "").str.strip()
+       
+        df["行政區"] = (
+            df["行政區"]
+            .astype(str)
+            .str.replace("※", "")
+            .apply(lambda x: re.sub(r"\s+", "", x))  # ✅ 移除所有空白字元（包含全形空格、Tab）
+            .str.strip()
+        )
         df["人口數"] = pd.to_numeric(df["人口數"].astype(str).str.replace(",", ""), errors="coerce").fillna(0).astype(int)
         df.insert(0, "縣市", city)
         df = df[["縣市", "行政區", "人口數"]]
@@ -113,8 +125,15 @@ try:
         print("✅ 資料筆數正確，共 158 筆")
 
     # === 匯出 CSV ===
+    data_dir = os.path.join(os.getcwd(), "data")
+    os.makedirs(data_dir, exist_ok=True)
+
+    # ✅ 清理欄位名稱空白鍵
+    df_all.columns = [col.replace(" ", "") for col in df_all.columns]
+
     output_name = f"six_city_population_{latest_year}{str(latest_month).zfill(2)}.csv"
-    df_all.to_csv(output_name, index=False, encoding="utf-8-sig")
+    output_path = os.path.join(data_dir, output_name)
+    df_all.to_csv(output_path, index=False, encoding="utf-8-sig")
 
     print(f"📦 已成功輸出六都人口數：{output_name}")
     print(df_all.head(10))
@@ -125,3 +144,18 @@ except Exception as e:
         driver.quit()
     except:
         pass
+
+
+# === 將資料寫入 MySQL ===
+
+load_dotenv()
+
+username = os.getenv("MYSQL_USERNAME")
+password = os.getenv("MYSQL_PASSWORD")
+target_ip = os.getenv("MYSQL_IP")
+target_port = int(os.getenv("MYSQL_PORTT"))
+db_name = os.getenv("MYSQL_DB_NAME")
+
+engine = create_engine(f"mysql+pymysql://{username}:{password}@{target_ip}:{target_port}/{db_name}")
+
+df_all.to_sql(name="raw_population", con=engine, if_exists="replace", index=False)
