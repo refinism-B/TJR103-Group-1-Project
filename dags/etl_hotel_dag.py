@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from src.tasks import etl_hospital
+from src.tasks import etl_hotel
 
 # -------------------------------------
 # ✨ Step 1. DAG 參數設定
@@ -23,7 +23,7 @@ with DAG(
     dag_id="etl_hospital_dag",
     description="Hospital ETL pipeline (single-task wrapper)",
     schedule_interval="@monthly",  # 每月執行
-    start_date=datetime.now(),
+    start_date=datetime(2025, 1, 1),
     catchup=False,
     default_args=default_args,
     tags=["hospital", "etl"],
@@ -34,7 +34,7 @@ with DAG(
     # -------------------------------------
     etl_task = PythonOperator(
         task_id="etl_hospital_pipeline",
-        python_callable=etl_hospital.main,  # 直接呼叫整個 ETL 任務
+        python_callable=etl_hotel.main,  # 直接呼叫整個 ETL 任務
     )
 
     etl_task
