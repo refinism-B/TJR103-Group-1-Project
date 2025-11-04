@@ -44,30 +44,29 @@ def trans_op_time_to_hours(op_time):
 
         # 營業時間為一週list，採逐日處理
         for day in op_time:
-            if day != 0:
-                # 使用分隔符號將"星期X"移除
-                step1 = day.split(": ")[1].strip()
+            # 使用分隔符號將"星期X"移除
+            step1 = day.split(": ")[1].strip()
 
-                # 若某日為休息則營業時間為0
-                if step1 == "休息":
+            # 若某日為休息則營業時間為0
+            if step1 == "休息":
+                hours = 0
+
+            elif step1 == "24 小時營業":
+                hours = 24
+
+            else:
+                # 若營業時間的字串中含有","表示不只一個營業時段
+                # 先切割後再逐段處理
+                if "," in day:
+                    op_list = step1.split(",")
                     hours = 0
-
-                elif step1 == "24 小時營業":
-                    hours = 24
-
+                    for period in op_list:
+                        period = period.strip()
+                        hours += count_hours(period)
                 else:
-                    # 若營業時間的字串中含有","表示不只一個營業時段
-                    # 先切割後再逐段處理
-                    if "," in day:
-                        op_list = step1.split(",")
-                        hours = 0
-                        for period in op_list:
-                            period = period.strip()
-                            hours += count_hours(period)
-                    else:
-                        hours = count_hours(step1)
+                    hours = count_hours(step1)
 
-                op_hours += hours
+            op_hours += hours
 
     return op_hours
 
