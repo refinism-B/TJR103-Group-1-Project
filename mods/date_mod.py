@@ -1,6 +1,7 @@
 from datetime import time, date, datetime, timedelta
 import pandas as pd
 import ast
+import numpy as np
 
 """
 這個模組是關於時間或日期應用的自訂函式
@@ -30,45 +31,68 @@ def trans_op_time_to_hours(op_time):
     """輸入營業時間list，會逐日計算營業時間並加總後回傳
     僅適用google map營業時間格式"""
 
-    # 若沒有營業時間，則時數直接為0
-    if op_time is None:
-        op_hours = 0
-    elif str(op_time).lower() == "nan":
-        op_hours = 0
-    elif op_time == 0:
-        op_hours = 0
+    # 第一種狀況：輸入為None值
+    if pd.isna(op_time):
+        return 0
 
-    # 若有營業時間，則逐日計算時數後相加
-    else:
-        op_hours = 0
+    # 第二種狀況：輸入為整數或浮點數
+    if isinstance(op_time, (int, float)):
+        if np.isnan(op_time) or op_time < 0:
+            return 0
+        if op_time > 0:
+            return op_time
+        if op_time == 0:
+            return 0
 
-        # 營業時間為一週list，採逐日處理
-        for day in op_time:
-            # 使用分隔符號將"星期X"移除
-            step1 = day.split(": ")[1].strip()
+    # 第三種情況：輸入為字串
+    na_words = ["nan", "na", "null", "none", ]
 
-            # 若某日為休息則營業時間為0
-            if step1 == "休息":
-                hours = 0
+    if isinstance(op_time, str):
+        if op_time == "0" or op_time == "":
+            return 0
 
-            elif step1 == "24 小時營業":
-                hours = 24
+        if op_time.lower() in na_words:
+            return 0
 
-            else:
-                # 若營業時間的字串中含有","表示不只一個營業時段
-                # 先切割後再逐段處理
-                if "," in day:
-                    op_list = step1.split(",")
-                    hours = 0
-                    for period in op_list:
-                        period = period.strip()
-                        hours += count_hours(period)
+        # 若有營業時間，則逐日計算時數後相加
+        else:
+            try:
+                ast.literal_eval(op_time)
+                if not isinstance(op_time, list):
+                    return 0
                 else:
-                    hours = count_hours(step1)
+                    op_hours = 0
 
-            op_hours += hours
+                    # 營業時間為一週list，採逐日處理
+                    for day in op_time:
+                        # 使用分隔符號將"星期X"移除
+                        step1 = day.split(": ")[1].strip()
 
-    return op_hours
+                        # 若某日為休息則營業時間為0
+                        if step1 == "休息":
+                            hours = 0
+
+                        elif step1 == "24 小時營業":
+                            hours = 24
+
+                        else:
+                            # 若營業時間的字串中含有","表示不只一個營業時段
+                            # 先切割後再逐段處理
+                            if "," in day:
+                                op_list = step1.split(",")
+                                hours = 0
+                                for period in op_list:
+                                    period = period.strip()
+                                    hours += count_hours(period)
+                            else:
+                                hours = count_hours(step1)
+
+                        op_hours += hours
+
+                return op_hours
+
+            except (ValueError, SyntaxError):
+                return 0
 
 
 def trans_ophours_columns(value):
