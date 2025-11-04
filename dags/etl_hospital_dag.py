@@ -5,8 +5,6 @@ from airflow.operators.python import PythonOperator
 # 匯入 ETL 模組
 from src.extract import E_hospital
 from src.transform import (
-    T_hospital_c_d,
-    T_hospital_place_id,
     T_hospital_details,
     T_hospital_clean_sort,
     T_hospital_id,
@@ -15,6 +13,7 @@ from src.transform import (
     T_hospital_sql,
 )
 from src.load import L_hospital
+from transform import T_hotel_c_d, T_hotel_place_id
 
 # 預設的參數
 default_args = {
@@ -41,9 +40,9 @@ with DAG(
     )
 
     # Transform Steps
-    t_c_d = PythonOperator(task_id="T_c_d", python_callable=T_hospital_c_d.main)
+    t_c_d = PythonOperator(task_id="T_c_d", python_callable=T_hotel_c_d.main)
     t_place = PythonOperator(
-        task_id="T_place_id", python_callable=T_hospital_place_id.main
+        task_id="T_place_id", python_callable=T_hotel_place_id.main
     )
     t_details = PythonOperator(
         task_id="T_details", python_callable=T_hospital_details.main
