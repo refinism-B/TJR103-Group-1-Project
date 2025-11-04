@@ -1,12 +1,12 @@
-from mods import extractdata as ed
-from mods import readdata as rd
+from utils import extractdata as ed
+from utils import readdata as rd
 
 
 def main():
     id_sign = "ht"
 
-    raw_path = "data/processed/hotel/hotel_data_cleaned.csv"
-    processed_path = "data/processed/hotel/hotel_data_id.csv"
+    raw_path = "airflow/data/processed/hotel/hotel_data_cleaned.csv"
+    processed_path = "airflow/data/processed/hotel/hotel_data_id.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)

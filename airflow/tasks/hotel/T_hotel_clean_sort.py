@@ -1,5 +1,5 @@
-from mods import extractdata as ed
-from mods import readdata as rd
+from utils import extractdata as ed
+from utils import readdata as rd
 from dotenv import load_dotenv
 
 
@@ -7,8 +7,8 @@ def main():
     # 讀取.env檔案
     load_dotenv()
 
-    raw_path = "data/processed/hospital/hospital_data_detail.csv"
-    processed_path = "data/processed/hospital/hospital_data_cleaned.csv"
+    raw_path = "airflow/data/processed/hotel/hotel_data_detail.csv"
+    processed_path = "airflow/data/processed/hotel/hotel_data_cleaned.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)

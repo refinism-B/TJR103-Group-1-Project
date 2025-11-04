@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 from selenium.common import exceptions
 from selenium.webdriver.common.by import By
-from mods import savedata as sd
+from utils import savedata as sd
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
     NoSuchAttributeException = exceptions.NoSuchAttributeException
 
     URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
-    raw_path = "data/raw/hospital/hospital_data.csv"
+    raw_path = "airflow/data/raw/hospital/hospital_data.csv"
 
     # 對edge的options加上headers
     options = Options()

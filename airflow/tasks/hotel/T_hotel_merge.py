@@ -1,6 +1,6 @@
 import os
-from mods import extractdata as ed
-from mods import readdata as rd
+from utils import extractdata as ed
+from utils import readdata as rd
 from dotenv import load_dotenv
 
 
@@ -14,8 +14,8 @@ def main():
     password = os.getenv("MYSQL_PASSWORD")
     db = os.getenv("MYSQL_DB_NAME")
 
-    raw_path = "data/processed/hotel/hotel_data_id.csv"
-    processed_path = "data/processed/hotel/hotel_data_merged.csv"
+    raw_path = "airflow/data/processed/hotel/hotel_data_id.csv"
+    processed_path = "airflow/data/processed/hotel/hotel_data_merged.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)

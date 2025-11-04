@@ -1,5 +1,5 @@
-from mods import extractdata as ed
-from mods import readdata as rd
+from utils import extractdata as ed
+from utils import readdata as rd
 from dotenv import load_dotenv
 import os
 
@@ -8,8 +8,8 @@ def main():
     # 載入.env檔案
     load_dotenv()
 
-    raw_path = "data/processed/hotel/hotel_data_merged.csv"
-    processed_path = "data/processed/hotel/hotel_data_cat_id.csv"
+    raw_path = "airflow/data/processed/hotel/hotel_data_merged.csv"
+    processed_path = "airflow/data/processed/hotel/hotel_data_cat_id.csv"
 
     host = os.getenv("MYSQL_IP")
     port = int(os.getenv("MYSQL_PORTT"))

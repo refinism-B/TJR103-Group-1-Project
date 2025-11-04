@@ -1,10 +1,10 @@
-from mods import readdata as rd
-from mods import savedata as sd
+from utils import readdata as rd
+from utils import savedata as sd
 
 
 def main():
-    
-    raw_path = "data/raw/hotel/pet_establishment.csv"
+
+    raw_path = "airflow/data/raw/hotel/pet_establishment.csv"
 
     url = (
         "https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=fNT9RMo8PQRO"

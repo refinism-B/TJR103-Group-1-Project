@@ -1,6 +1,6 @@
 import os
-from mods import extractdata as ed
-from mods import readdata as rd
+from utils import extractdata as ed
+from utils import readdata as rd
 from dotenv import load_dotenv
 
 
@@ -10,8 +10,8 @@ def main():
 
     API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
 
-    raw_path = "data/processed/hospital/hospital_data_c_d.csv"
-    processed_path = "data/processed/hospital/hospital_data_placd_id.csv"
+    raw_path = "airflow/data/processed/hospital/hospital_data_c_d.csv"
+    processed_path = "airflow/data/processed/hospital/hospital_data_placd_id.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)
