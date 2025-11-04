@@ -6,8 +6,8 @@ import os
 # 載入.env檔案
 load_dotenv()
 
-raw_path = "data/processed/hospital_data_merged.csv"
-processed_path = "data/processed/hospital_data_cat_id.csv"
+raw_path = "data/processed/hospital/hospital_data_merged.csv"
+processed_path = "data/processed/hospital/hospital_data_cat_id.csv"
 
 host = os.getenv("MYSQL_IP")
 port = int(os.getenv("MYSQL_PORTT"))

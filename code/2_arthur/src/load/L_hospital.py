@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # csv檔路徑
-df = rd.get_csv_data("data/processed/hospital_data_final.csv")
+df = rd.get_csv_data("data/complete/hospital/hospital_data_final.csv")
 
 # csv讀取後手機格式會跑掉，透過函式做轉換
 df = ed.to_phone(df)
@@ -34,13 +34,12 @@ try:
     count = 0  # 計算幾筆資料
     for _, row in df.iterrows():
         sql = """
-        INSERT INTO Hospital (
-            hospital_id, place_id, name, address, phone, city, district, loc_id, business_status, op_hours, cat_id, types, rating, rating_total, longitude, latitude, map_url, website, newest_review
+        INSERT INTO hospital_new (
+            id, name, buss_status, loc_id, address, phone, op_hours, category_id, rating, rating_total, newest_review, longitude, latitude, map_url, website, place_id
         )
         VALUES (
             %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s
+            %s, %s, %s, %s, %s, %s, %s, %s
         );
         """
         count += cursor.execute(sql, tuple(row))  # pymysql以tuple傳送資料

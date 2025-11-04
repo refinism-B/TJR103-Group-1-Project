@@ -157,7 +157,6 @@ def clean_sort(df: pd.DataFrame, save_path: str):
 
     # ------------------------------------------------------------
     # 修改opening_hours欄位
-    # TODO 確認dm的時間轉換函式正確
     # ------------------------------------------------------------
     # csv讀進來時list會被轉成字串，所以先將str轉成list
     df_merged["opening_hours"] = df_merged["opening_hours"].apply(str_to_list)
@@ -273,7 +272,7 @@ def cat_id(
     # 讀取category表格的資料
     sql = f"""
     select category_id
-    from Category
+    from category
     where category_eng = '{category}';
     """
     cursor.execute(sql)
@@ -331,24 +330,21 @@ def to_sql_data(df: pd.DataFrame, save_path: str):
     # ------------------------------------------------------------
     final_columns = [
         "id",
-        "place_id",
         "name_checked",
+        "business_status",
+        "loc_id",
         "address_checked",
         "phone",
-        "city",
-        "district",
-        "loc_id",
-        "business_status",
         "opening_hours",
         "cat_id",
-        "types",
         "rating",
         "rating_total",
+        "newest_review",
         "longitude",
         "latitude",
         "map_url",
         "website",
-        "newest_review",
+        "place_id",
     ]
     df_final = df[final_columns]
     print(Fore.GREEN + "✅ Final table has finished.")

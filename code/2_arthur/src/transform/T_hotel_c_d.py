@@ -4,8 +4,8 @@ from mods import savedata as sd
 from dotenv import load_dotenv
 
 
-raw_path = "data/raw/pet_establishment.csv"
-processed_path = "data/processed/hotel_data_c_d.csv"
+raw_path = "data/raw/hotel/pet_establishment.csv"
+processed_path = "data/processed/hotel/hotel_data_c_d.csv"
 
 if __name__ == "__main__":
 
