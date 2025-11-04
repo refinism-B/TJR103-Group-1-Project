@@ -4,10 +4,9 @@ from mods import savedata as sd
 from dotenv import load_dotenv
 
 
-raw_path = "data/raw/hotel/pet_establishment.csv"
-processed_path = "data/processed/hotel/hotel_data_c_d.csv"
-
-if __name__ == "__main__":
+def main():
+    raw_path = "data/raw/hotel/pet_establishment.csv"
+    processed_path = "data/processed/hotel/hotel_data_c_d.csv"
 
     load_dotenv()
 
@@ -40,3 +39,7 @@ if __name__ == "__main__":
     )
 
     sd.store_to_csv_no_index(df_filtered, processed_path)
+
+
+if __name__ == "__main__":
+    main()

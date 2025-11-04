@@ -7,23 +7,22 @@ from selenium.common import exceptions
 from selenium.webdriver.common.by import By
 from mods import savedata as sd
 
-# 設定Selenium找不到元素與屬性時的錯誤
-NoSuchElementException = exceptions.NoSuchElementException
-NoSuchAttributeException = exceptions.NoSuchAttributeException
 
+def main():
+    # 設定Selenium找不到元素與屬性時的錯誤
+    NoSuchElementException = exceptions.NoSuchElementException
+    NoSuchAttributeException = exceptions.NoSuchAttributeException
 
-URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
-raw_path = "data/raw/hospital_data.csv"
-processed_path = "data/processed/hospital_data_ETL.csv"
+    URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
+    raw_path = "data/raw/hospital/hospital_data.csv"
 
-# 對edge的options加上headers
-options = Options()
-options.add_argument("user-agent=MyAgent/1.0")
+    # 對edge的options加上headers
+    options = Options()
+    options.add_argument("user-agent=MyAgent/1.0")
 
-# 設定edge的driver
-driver = webdriver.Edge(options=options)
+    # 設定edge的driver
+    driver = webdriver.Edge(options=options)
 
-if __name__ == "__main__":
     driver.get(URL)
     time.sleep(2)
 
@@ -77,3 +76,7 @@ if __name__ == "__main__":
 
     # 儲存原始CSV檔
     sd.store_to_csv_no_index(df, raw_path)
+
+
+if __name__ == "__main__":
+    main()

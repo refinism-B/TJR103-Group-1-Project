@@ -4,13 +4,13 @@ from mods import savedata as sd
 from dotenv import load_dotenv
 
 
-# 讀取.env檔案
-load_dotenv()
+def main():
+    # 讀取.env檔案
+    load_dotenv()
 
-raw_path = "data/raw/hospital/hospital_data.csv"
-processed_path = "data/processed/hospital/hospital_data_c_d.csv"
+    raw_path = "data/raw/hospital/hospital_data.csv"
+    processed_path = "data/processed/hospital/hospital_data_c_d.csv"
 
-if __name__ == "__main__":
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)
 
@@ -33,3 +33,7 @@ if __name__ == "__main__":
 
     # 儲存資料
     sd.store_to_csv_no_index(df, processed_path)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,9 +1,10 @@
 from mods import readdata as rd
 from mods import savedata as sd
 
-raw_path = "data/raw/pet_establishment.csv"
 
-if __name__ == "__main__":
+def main():
+    
+    raw_path = "data/raw/hotel/pet_establishment.csv"
 
     url = (
         "https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=fNT9RMo8PQRO"
@@ -17,3 +18,7 @@ if __name__ == "__main__":
 
     # 儲存raw data
     sd.store_to_csv_no_index(df=df, path=raw_path)
+
+
+if __name__ == "__main__":
+    main()
