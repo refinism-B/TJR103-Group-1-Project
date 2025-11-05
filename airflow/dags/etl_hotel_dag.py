@@ -32,12 +32,12 @@ default_args = {
 # -------------------------------------
 with DAG(
     dag_id="etl_hospital_dag",
-    description="Hospital ETL pipeline (single-task wrapper)",
+    description="Hotel ETL pipeline (single-task wrapper)",
     schedule_interval="@monthly",  # 每月執行
-    start_date=datetime(2025, 1, 1),
+    start_date=datetime.now(),
     catchup=False,
     default_args=default_args,
-    tags=["hospital", "etl"],
+    tags=["hotel", "etl"],
 ) as dag:
 
     # -------------------------------------
