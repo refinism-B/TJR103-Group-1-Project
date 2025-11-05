@@ -4,7 +4,7 @@ from utils import savedata as sd
 
 def main():
 
-    raw_path = "airflow/data/raw/hotel/pet_establishment.csv"
+    raw_path = "/opt/airflow/data/raw/hotel/pet_establishment.csv"
 
     url = (
         "https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=fNT9RMo8PQRO"

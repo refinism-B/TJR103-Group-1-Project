@@ -10,8 +10,8 @@ def main():
 
     API_KEY = os.getenv("GOOGLE_MAP_KEY_CHGWYELLOW")
 
-    raw_path = "airflow/data/processed/hotel/hotel_data_c_d.csv"
-    processed_path = "airflow/data/processed/hotel/hotel_data_place_id.csv"
+    raw_path = "/opt/airflow/data/processed/hotel/hotel_data_c_d.csv"
+    processed_path = "/opt/airflow/data/processed/hotel/hotel_data_place_id.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)

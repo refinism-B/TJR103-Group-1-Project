@@ -8,8 +8,8 @@ def main():
     # 載入.env檔案
     load_dotenv()
 
-    raw_path = "airflow/data/processed/hotel/hotel_data_merged.csv"
-    processed_path = "airflow/data/processed/hotel/hotel_data_cat_id.csv"
+    raw_path = "/opt/airflow/data/processed/hotel/hotel_data_merged.csv"
+    processed_path = "/opt/airflow/data/processed/hotel/hotel_data_cat_id.csv"
 
     host = os.getenv("MYSQL_IP")
     port = int(os.getenv("MYSQL_PORTT"))

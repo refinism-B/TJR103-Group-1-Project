@@ -7,8 +7,8 @@ def main():
     # 讀取.env檔案
     load_dotenv()
 
-    raw_path = "airflow/data/processed/hospital/hospital_data_detail.csv"
-    processed_path = "airflow/data/processed/hospital/hospital_data_cleaned.csv"
+    raw_path = "/opt/airflow/data/processed/hospital/hospital_data_detail.csv"
+    processed_path = "/opt/airflow/data/processed/hospital/hospital_data_cleaned.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)

@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 
 def main():
-    raw_path = "airflow/data/raw/hotel/pet_establishment.csv"
-    processed_path = "airflow/data/processed/hotel/hotel_data_c_d.csv"
+    raw_path = "/opt/airflow/data/raw/hotel/pet_establishment.csv"
+    processed_path = "/opt/airflow/data/processed/hotel/hotel_data_c_d.csv"
 
     load_dotenv()
 

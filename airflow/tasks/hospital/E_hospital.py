@@ -14,7 +14,7 @@ def main():
     NoSuchAttributeException = exceptions.NoSuchAttributeException
 
     URL = "https://ahis9.aphia.gov.tw/Veter/OD/HLIndex.aspx"
-    raw_path = "airflow/data/raw/hospital/hospital_data.csv"
+    raw_path = "/opt/airflow/data/raw/hospital/hospital_data.csv"
 
     # 對edge的options加上headers
     options = Options()

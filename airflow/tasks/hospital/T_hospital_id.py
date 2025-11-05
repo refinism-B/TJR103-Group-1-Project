@@ -5,8 +5,8 @@ from utils import readdata as rd
 def main():
     id_sign = "hp"
 
-    raw_path = "airflow/data/processed/hospital/hospital_data_cleaned.csv"
-    processed_path = "airflow/data/processed/hospital/hospital_data_id.csv"
+    raw_path = "/opt/airflow/data/processed/hospital/hospital_data_cleaned.csv"
+    processed_path = "/opt/airflow/data/processed/hospital/hospital_data_id.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)

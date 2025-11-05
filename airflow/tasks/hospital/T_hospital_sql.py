@@ -3,8 +3,8 @@ from utils import readdata as rd
 
 
 def main():
-    raw_path = "airflow/data/processed/hospital/hospital_data_cat_id.csv"
-    processed_path = "airflow/data/complete/hospital/hospital_data_final.csv"
+    raw_path = "/opt/airflow/data/processed/hospital/hospital_data_cat_id.csv"
+    processed_path = "/opt/airflow/data/complete/hospital/hospital_data_final.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)
