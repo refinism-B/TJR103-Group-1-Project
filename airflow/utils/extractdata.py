@@ -9,10 +9,10 @@ import ast
 import re
 import pandas as pd
 import numpy as np
-from mods import gmap as gm
-from mods import connectDB as connDB
-from mods import savedata as sd
-from mods import date_mod as dm
+from utils import gmap as gm
+from utils import connectDB as connDB
+from utils import savedata as sd
+from utils import date_mod as dm
 from colorama import Fore
 
 
