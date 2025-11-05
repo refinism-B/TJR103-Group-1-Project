@@ -31,7 +31,7 @@ default_args = {
 # ✨ Step 2. 建立 DAG
 # -------------------------------------
 with DAG(
-    dag_id="etl_hospital_dag",
+    dag_id="etl_hotel_dag",
     description="Hotel ETL pipeline (single-task wrapper)",
     schedule_interval="@monthly",  # 每月執行
     start_date=datetime.now(),
