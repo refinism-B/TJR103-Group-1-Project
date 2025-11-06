@@ -39,3 +39,44 @@ GSEARCH_CITY_CODE = {
     "臺南市": "TNA",
     "高雄市": "KSH"
 }
+
+
+
+PET_REGIS_COLUMNS_NAME = [
+    "area_id",
+    "district",
+    "登記單位數",
+    "regis_count",
+    "removal_count",
+    "轉讓數",
+    "變更數",
+    "絕育數",
+    "絕育除戶數",
+    "免絕育數",
+    "免絕育除戶數",
+    "animal",
+    "date",
+    "city",
+    "update_date"
+]
+
+
+PET_REGIS_DROP_COLUMNS = [
+    "area_id",
+    "登記單位數",
+    "轉讓數",
+    "變更數",
+    "絕育數",
+    "絕育除戶數",
+    "免絕育數",
+    "免絕育除戶數"
+]
+
+
+PET_REGIS_FINAL_COLUMNS = ["loc_id",
+    "date",
+    "animal",
+    "regis_count",
+    "removal_count",
+    "update_date"
+]

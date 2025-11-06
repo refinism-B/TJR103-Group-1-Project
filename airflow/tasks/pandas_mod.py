@@ -75,12 +75,52 @@ def T_combine_six_dataframe(
     df3: pd.DataFrame,
     df4: pd.DataFrame,
     df5: pd.DataFrame,
-    df6: pd.DataFrame,) -> pd.DataFrame:
+    df6: pd.DataFrame,
+    ) -> pd.DataFrame:
 
-    df_combine = pd.concat([df1, df2], ignore_index=True)
-    df_combine = pd.concat([df_combine, df3], ignore_index=True)
-    df_combine = pd.concat([df_combine, df4], ignore_index=True)
-    df_combine = pd.concat([df_combine, df5], ignore_index=True)
-    df_combine = pd.concat([df_combine, df6], ignore_index=True)
+    df_combine = pd.concat([df1, df2, df3, df4, df5, df6], ignore_index=True)
 
     return df_combine
+
+
+@task
+def T_combine_five_dataframe(
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    df3: pd.DataFrame,
+    df4: pd.DataFrame,
+    df5: pd.DataFrame,
+    ) -> pd.DataFrame:
+
+    df_combine = pd.concat([df1, df2, df3, df4, df5], ignore_index=True)
+
+    return df_combine
+
+
+
+
+@task
+def T_rename_columns(df: pd.DataFrame, col_list: list) -> pd.DataFrame:
+    if len(df.columns) != len(col_list):
+        raise ValueError("DF欄位數與列表長度不符合！")
+    else:
+        df.columns = col_list
+        return df
+
+@task
+def T_drop_columns(df: pd.DataFrame, drop_list: list) -> pd.DataFrame:
+    missing_cols = [col for col in drop_list if col not in df.columns]
+    if len(missing_cols) != 0:
+        raise ValueError("某些欄位不存在df中！")
+    else:
+        df = df.drop(columns=drop_list, axis=1)
+        return df
+
+@task
+def T_sort_columns(df: pd.DataFrame, new_cols: list) -> pd.DataFrame:
+    missing_cols = [col for col in new_cols if col not in df.columns]
+    if len(missing_cols) != 0:
+        raise ValueError("某些欄位不存在df中！")
+    else:
+        df = df[new_cols]
+        return df
