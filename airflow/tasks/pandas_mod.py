@@ -2,13 +2,14 @@ import pandas as pd
 from pathlib import Path
 import os
 from datetime import time, date, datetime, timedelta
+from airflow.decorators import task
 
 """
 這個模組是關於pandas應用的自訂函式
 通常簡寫為 import pandas_mod as pdm
 """
 
-
+@task
 def read_or_build(folder, file, columns):
     """檢查路徑檔案是否存在，若有則讀取，無則建立空表格"""
     file_path = os.path.join(folder, file)
@@ -22,7 +23,7 @@ def read_or_build(folder, file, columns):
 
     return df, file_path
 
-
+@task
 def exist_or_not(folder, file):
     """檢查路徑檔案是否存在，若有則讀取，無則建立空表格"""
     file_path = os.path.join(folder, file)
@@ -30,7 +31,7 @@ def exist_or_not(folder, file):
 
     return path.exists(), file_path
 
-
+@task
 def reassign_id(df, id_col_name, id_str):
     """根據原有最後一筆資料進行自動延續編號
     對於未編號的資料，需要先建立id欄位並且賦予空字串
@@ -60,8 +61,26 @@ def reassign_id(df, id_col_name, id_str):
 
     return df
 
-
-def combine_dataframe(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+@task
+def T_combine_dataframe(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     df_combine = pd.concat([df1, df2], ignore_index=True)
+
+    return df_combine
+
+
+@task
+def T_combine_six_dataframe(
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    df3: pd.DataFrame,
+    df4: pd.DataFrame,
+    df5: pd.DataFrame,
+    df6: pd.DataFrame,) -> pd.DataFrame:
+
+    df_combine = pd.concat([df1, df2], ignore_index=True)
+    df_combine = pd.concat([df_combine, df3], ignore_index=True)
+    df_combine = pd.concat([df_combine, df4], ignore_index=True)
+    df_combine = pd.concat([df_combine, df5], ignore_index=True)
+    df_combine = pd.concat([df_combine, df6], ignore_index=True)
 
     return df_combine

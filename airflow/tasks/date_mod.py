@@ -2,6 +2,7 @@ from datetime import time, date, datetime, timedelta
 import pandas as pd
 import ast
 import numpy as np
+from airflow.decorators import task
 
 """
 這個模組是關於時間或日期應用的自訂函式
