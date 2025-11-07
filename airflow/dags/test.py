@@ -15,6 +15,7 @@ from utils.config import GSEARCH_CITY_CODE, STORE_TYPE_ENG_CH_DICT, STORE_TYPE_C
 from utils import gmap_mod as gm
 from tasks import pandas_mod as pdm
 from tasks import database_file_mod as dfm
+from tasks.pipeline import gmap_full_search as gfs
 
 
 # 設定DAG基本資訊
@@ -30,7 +31,7 @@ default_args = {
 
 
 @dag(
-    dag_id="d_test04",
+    dag_id="d_test05",
     default_args=default_args,
     description="[每月更新]透過經緯度爬取六都「寵物美容」列表",
     schedule_interval="0 */2 * * *",
@@ -40,48 +41,53 @@ default_args = {
     tags=["bevis", "monthly", "salon"]
 )
 def d_test():
-    def S_get_keyword_dict(dict_name: dict, index: int) -> dict:
-        keyword_ch_list = list(dict_name.keys())
-        keyword_list = list(dict_name.values())
+    STORE_TYPE_ENG_CH_DICT = {
+        "寵物美容": "salon",
+        "寵物餐廳": "restaurant",
+        "寵物用品": "supplies"
+    }
 
-        return {"keyword": keyword_ch_list[index], "file_name": keyword_list[index]}
+    @task
+    def S_get_keyword_dict(dict_name: dict, index: int):
+        keyword_list = list(dict_name.keys())
+        file_name_list = list(dict_name.values())
+        return {
+            "keyword": keyword_list[index], "file_name": file_name_list[index]
+        }
 
-    def S_get_read_setting(keyword_dict: dict) -> dict:
+    def S_get_main_save_setting(keyword_dict: dict) -> dict:
         folder = f"/opt/airflow/data/processed/{keyword_dict['file_name']}"
         file_name = f"{keyword_dict['file_name']}_place_id.csv"
 
         return {"folder": folder, "file_name": file_name}
 
     @task
-    def S_get_id_columns_setting(df: pd.DataFrame, type_dict: dict, keyword_dict: dict) -> pd.DataFrame:
-        store_type_name = keyword_dict["keyword"]
-        id_str = type_dict[store_type_name]
+    def L_save_file_to_csv_by_dict(save_setting: dict, df: pd.DataFrame):
+        try:
+            folder = Path(save_setting["folder"])
+            folder.mkdir(parents=True, exist_ok=True)
+            file_name = save_setting["file_name"]
+            path = folder / file_name
+            df.to_csv(path, index=False, encoding="utf-8-sig")
 
-        return {"id_cols": "id", "id_str": id_str}
+            print(f"{file_name}地端存檔成功！")
+        except Exception as e:
+            print({f"{file_name}地端存檔失敗：{e}"})
 
-    @task
-    def T_add_id_columns(df: pd.DataFrame):
-        df["id"] = ""
+    # 0為寵物美容，1為寵物餐廳，2為寵物用品
+    keyword_dict = gfs.S_get_keyword_dict(
+        dict_name=STORE_TYPE_ENG_CH_DICT, index=1)
 
-        return df
+    # 取得存檔設定
+    main_save_setting = gfs.S_get_main_save_setting(keyword_dict=keyword_dict)
 
-    # 先定義要執行的商店類別
-    # 0為寵物美容、1為寵物餐廳、2為寵物用品
-    keyword_dict = S_get_keyword_dict(
-        dict_name=STORE_TYPE_ENG_CH_DICT, index=0)
+    df_main = pd.DataFrame({
+        "name": ["a", "b", "c"],
+        "age": [10, 20, 30]
+    })
 
-    # 設定讀取路徑及檔案名
-    read_setting = S_get_read_setting(keyword_dict=keyword_dict)
-
-    # 將place id表讀入
-    df_place = dfm.E_load_file_from_csv_by_dict(read_setting=read_setting)
-
-    id_setting = S_get_id_columns_setting(
-        df=df_place, type_dict=STORE_TYPE_CODE_DICT, keyword_dict=keyword_dict)
-
-    df_place = T_add_id_columns(df=df_place)
-
-    df_place = pdm.T_reassign_id(df=df_place, setting_dict=id_setting)
+    # 存檔至地端
+    dfm.L_save_file_to_csv_by_dict(save_setting=main_save_setting, df=df_main)
 
 
 d_test()

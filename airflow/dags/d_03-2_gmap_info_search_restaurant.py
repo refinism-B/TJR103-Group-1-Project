@@ -1,9 +1,18 @@
-from datetime import datetime, timedelta
+import os
+import re
+import time
+from datetime import date, datetime, timedelta
+from pathlib import Path
 
+import pandas as pd
 from airflow.decorators import dag, task
+from dotenv import load_dotenv
+from opencc import OpenCC
 from tasks import database_file_mod as dfm
+from tasks import date_mod as dtm
 from tasks import pandas_mod as pdm
 from tasks.pipeline import gmap_info_search as gis
+from utils import gmap_mod as gm
 from utils.config import (ADDRESS_DROP_KEYWORDS,
                           GMAP_INFO_SEARCH_FINAL_COLUMNS, STORE_DROP_KEY_WORDS,
                           STORE_TYPE_CODE_DICT, STORE_TYPE_ENG_CH_DICT,
@@ -22,21 +31,21 @@ default_args = {
 
 
 @dag(
-    dag_id="d_03-1_gmap_info_search_salon",
+    dag_id="d_03-2_gmap_info_search_restaurant",
     default_args=default_args,
-    description="[每月更新][寵物美容]根據place id資料爬取店家詳細資料",
+    description="[每月更新][寵物餐廳]根據place id資料爬取店家詳細資料",
     schedule_interval="0 */2 * * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "salon", "test_done"]
+    tags=["bevis", "monthly", "restaurant", "test_done"]
 )
-def d_03_1_gmap_info_search_salon():
+def d_03_2_gmap_info_search_restaurant():
 
     # 先定義要執行的商店類別
     # 0為寵物美容、1為寵物餐廳、2為寵物用品
     keyword_dict = gis.S_get_keyword_dict(
-        dict_name=STORE_TYPE_ENG_CH_DICT, index=0)
+        dict_name=STORE_TYPE_ENG_CH_DICT, index=1)
 
     # 設定讀取路徑及檔案名
     read_setting = gis.S_get_read_setting(keyword_dict=keyword_dict)
@@ -147,4 +156,4 @@ def d_03_1_gmap_info_search_salon():
                        finish_count=finish_data_total)
 
 
-d_03_1_gmap_info_search_salon()
+d_03_2_gmap_info_search_restaurant()
