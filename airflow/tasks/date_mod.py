@@ -3,6 +3,7 @@ import pandas as pd
 import ast
 import numpy as np
 from airflow.decorators import task
+from collections.abc import Iterable
 
 """
 這個模組是關於時間或日期應用的自訂函式
@@ -50,8 +51,9 @@ def str_converter(op_time):
 
 
 def list_converter(op_time):
-    op_time = ast.literal_eval(op_time)
-    if not isinstance(op_time, list):
+    if isinstance(op_time, str):
+        op_time = ast.literal_eval(op_time)
+    if not isinstance(op_time, Iterable):
         return 0
     else:
         op_hours = 0
@@ -88,16 +90,26 @@ def list_converter(op_time):
 def trans_op_time_to_hours(op_time):
     """輸入營業時間list，會逐日計算營業時間並加總後回傳
     僅適用google map營業時間格式"""
+    is_iterable = isinstance(
+        op_time, Iterable) and not isinstance(op_time, str)
 
-    # 第一種狀況：輸入為None值
-    if pd.isna(op_time):
+    # 第一種狀況：None值
+    if op_time is None:
         return 0
 
-    # 第二種狀況：輸入為浮點數
+    # 第二種狀況：可迭代且全部輸入為None值
+    if not is_iterable:
+        if pd.isna(op_time):
+            return 0
+    else:
+        if pd.isna(op_time).all():
+            return 0
+
+    # 第三種狀況：輸入為浮點數
     if isinstance(op_time, (int, float)):
         return float_or_int_converter(op_time)
 
-    # 第三種情況：輸入為字串
+    # 第四種情況：輸入為字串
     if isinstance(op_time, (str)):
         if not str_converter(op_time):
             return 0
@@ -109,3 +121,7 @@ def trans_op_time_to_hours(op_time):
 
             except (ValueError, SyntaxError):
                 return 0
+
+    # 第五種情況：輸入為列表（最原本狀態）
+    if is_iterable:
+        return list_converter(op_time)

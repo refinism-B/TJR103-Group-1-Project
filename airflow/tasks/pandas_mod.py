@@ -9,6 +9,7 @@ from airflow.decorators import task
 通常簡寫為 import pandas_mod as pdm
 """
 
+
 @task
 def read_or_build(folder, file, columns):
     """檢查路徑檔案是否存在，若有則讀取，無則建立空表格"""
@@ -23,6 +24,7 @@ def read_or_build(folder, file, columns):
 
     return df, file_path
 
+
 @task
 def exist_or_not(folder, file):
     """檢查路徑檔案是否存在，若有則讀取，無則建立空表格"""
@@ -31,13 +33,17 @@ def exist_or_not(folder, file):
 
     return path.exists(), file_path
 
+
 @task
-def reassign_id(df, id_col_name, id_str):
+def T_reassign_id(df: pd.DataFrame, setting_dict: dict):
     """根據原有最後一筆資料進行自動延續編號
     對於未編號的資料，需要先建立id欄位並且賦予空字串
     df請輸入想要增加編號的df
     id_col_name請輸入id的「欄位名」
     id_str請輸入編號的「前綴字串」"""
+
+    id_col_name = setting_dict["id_cols"]
+    id_str = setting_dict["id_str"]
 
     # 先找出原本的id編號（id欄位非空）最大值
     nums = df.loc[df[id_col_name] != "",
@@ -61,6 +67,7 @@ def reassign_id(df, id_col_name, id_str):
 
     return df
 
+
 @task
 def T_combine_dataframe(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
     df_combine = pd.concat([df1, df2], ignore_index=True)
@@ -76,7 +83,7 @@ def T_combine_six_dataframe(
     df4: pd.DataFrame,
     df5: pd.DataFrame,
     df6: pd.DataFrame,
-    ) -> pd.DataFrame:
+) -> pd.DataFrame:
 
     df_combine = pd.concat([df1, df2, df3, df4, df5, df6], ignore_index=True)
 
@@ -90,13 +97,11 @@ def T_combine_five_dataframe(
     df3: pd.DataFrame,
     df4: pd.DataFrame,
     df5: pd.DataFrame,
-    ) -> pd.DataFrame:
+) -> pd.DataFrame:
 
     df_combine = pd.concat([df1, df2, df3, df4, df5], ignore_index=True)
 
     return df_combine
-
-
 
 
 @task
@@ -107,6 +112,7 @@ def T_rename_columns(df: pd.DataFrame, col_list: list) -> pd.DataFrame:
         df.columns = col_list
         return df
 
+
 @task
 def T_drop_columns(df: pd.DataFrame, drop_list: list) -> pd.DataFrame:
     missing_cols = [col for col in drop_list if col not in df.columns]
@@ -116,6 +122,7 @@ def T_drop_columns(df: pd.DataFrame, drop_list: list) -> pd.DataFrame:
         df = df.drop(columns=drop_list, axis=1)
         return df
 
+
 @task
 def T_sort_columns(df: pd.DataFrame, new_cols: list) -> pd.DataFrame:
     missing_cols = [col for col in new_cols if col not in df.columns]
@@ -124,3 +131,15 @@ def T_sort_columns(df: pd.DataFrame, new_cols: list) -> pd.DataFrame:
     else:
         df = df[new_cols]
         return df
+
+
+@task
+def T_transform_to_df(data: list[dict]) -> pd.DataFrame:
+    df = pd.DataFrame(data=data)
+    return df
+
+
+@task
+def S_count_data(df: pd.DataFrame) -> int:
+    count = len(df)
+    return count

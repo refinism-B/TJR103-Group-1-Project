@@ -1,3 +1,4 @@
+import ast
 import os
 import time
 from datetime import date, datetime, timedelta
@@ -28,16 +29,16 @@ default_args = {
 
 
 @dag(
-    dag_id="d_test06-4_gmap_full_search_salon",
+    dag_id="d_02-2_gmap_full_search_restaurant",
     default_args=default_args,
     description="[每月更新]透過經緯度爬取六都「寵物美容」列表",
     schedule_interval="0 */2 * * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "salon"]
+    tags=["bevis", "monthly", "restaurant", "test_done"]
 )
-def d_02_gmap_full_search():
+def d_02_2_gmap_full_search_restaurant():
 
     def S_get_gdf() -> gpd.GeoDataFrame:
         folder = Path("/opt/airflow/utils")
@@ -56,20 +57,10 @@ def d_02_gmap_full_search():
         return geo_data
 
     @task
-    def S_get_search_data_dict(dict_name: dict) -> dict:
-        return {
-            "today": date.today().strftime("%Y/%m/%d"),
-            "city_list": list(dict_name.keys()),
-            "city_eng_list": list(dict_name.values()),
-            "city_dict": dict_name
-        }
-
-    @task
     def S_get_city_data(dict_name: dict, index: int) -> dict:
-        return {
-            "city_name": dict_name["city_list"][index],
-            "city_code": dict_name["city_eng_list"][index]
-        }
+        city_name_list = list(dict_name.keys())
+        city_code_list = list(dict_name.values())
+        return {"city_name": city_name_list[index], "city_code": city_code_list[index]}
 
     @task
     def S_get_keyword_dict(dict_name: dict, index: int):
@@ -150,7 +141,7 @@ def d_02_gmap_full_search():
                 folder.mkdir(parents=True, exist_ok=True)
                 file_name = f"{city_data['city_code']}_{keyword['file_name']}_temp.csv"
                 path = folder / file_name
-                df.to_csv(path, index=False, encoding="utf-8")
+                df.to_csv(path, index=False, encoding="utf-8-sig")
                 count += 1
                 time.sleep(1.5)
 
@@ -178,7 +169,6 @@ def d_02_gmap_full_search():
     def T_transform_metadata_df(result_dict: dict) -> pd.DataFrame:
         data = result_dict["metadata"]
         df = pd.DataFrame(data=data, index=[0])
-        df["update_time"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
 
         return df
 
@@ -191,26 +181,90 @@ def d_02_gmap_full_search():
     def S_get_metadata_save_setting():
         file_date = date.today().strftime('%Y%m%d')
         folder = "/opt/airflow/data/complete/gmap_record"
-        file_name = f"{date}_gmap_record.csv"
+        file_name = f"{file_date}_gmap_record.csv"
 
         return {"folder": folder, "file_name": file_name}
 
-    # 程式正式開始
+    def in_boundary(city_geo_data, lat, lon):
+        loc_p = Point(lon, lat)
+        return city_geo_data.contains(loc_p)
 
-    # 取得gmap搜尋使用的地區的字典
-    gsearch_dict = S_get_search_data_dict(dict_name=GSEARCH_CITY_CODE)
+    @task
+    def T_keep_operation_store(df: pd.DataFrame) -> pd.DataFrame:
+        mask = (df["buss_status"] == "OPERATIONAL")
+        df = df[mask]
 
-    # 將六都及對應的字串名稱取出
-    TPE_city_dict = S_get_city_data(dict_name=gsearch_dict, index=0)
-    TYU_city_dict = S_get_city_data(dict_name=gsearch_dict, index=1)
-    TCH_city_dict = S_get_city_data(dict_name=gsearch_dict, index=2)
-    TNA_city_dict = S_get_city_data(dict_name=gsearch_dict, index=3)
-    KSH_city_dict = S_get_city_data(dict_name=gsearch_dict, index=4)
+        return df
+
+    @task
+    def T_drop_duplicated(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.drop_duplicates(subset=["place_id"], keep="first")
+
+        return df
+
+    @task
+    def T_drop_no_geometry(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.dropna(subset=["geometry"])
+
+        return df
+
+    def to_dict_if_str(object):
+        if isinstance(object, str):
+            return ast.literal_eval(object)
+        else:
+            return object
+
+    @task
+    def T_detect_in_boundary_or_not(df: pd.DataFrame, city_dict: dict) -> pd.DataFrame:
+        geo_data = S_get_city_geodata(city_name=city_dict["city_name"])
+        boundary_list = []
+        df["geometry"] = df["geometry"].apply(to_dict_if_str)
+        for index, row in df.iterrows():
+            lat = row["geometry"].get("lat", None)
+            lon = row["geometry"].get("lng", None)
+            if lat == None or lon == None:
+                boundary_list.append(False)
+            else:
+                boundary_list.append(in_boundary(
+                    city_geo_data=geo_data, lat=lat, lon=lon))
+
+        df["in_boundary"] = boundary_list
+
+        return df
+
+    @task
+    def T_drop_data_out_boundary(df: pd.DataFrame) -> pd.DataFrame:
+        mask = (df["in_boundary"] == True)
+        df = df[mask]
+
+        return df
+
+    @task
+    def T_add_update_date(df: pd.DataFrame) -> pd.DataFrame:
+        today = date.today().strftime('%Y/%m/%d')
+        df["update_date"] = today
+
+        return df
+
+    def S_get_main_save_setting(keyword_dict: dict) -> dict:
+        folder = f"/opt/airflow/data/processed/{keyword_dict['file_name']}"
+        file_name = f"{keyword_dict['file_name']}_place_id.csv"
+
+        return {"folder": folder, "file_name": file_name}
+
+    """程式正式開始"""
 
     # 爬取的商店類型，若要修改則在此變更。
     # 0為寵物美容，1為寵物餐廳，2為寵物用品
     keyword_dict = S_get_keyword_dict(
-        dict_name=STORE_TYPE_ENG_CH_DICT, index=0)
+        dict_name=STORE_TYPE_ENG_CH_DICT, index=1)
+
+    # 將六都及對應的字串名稱取出
+    TPE_city_dict = S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=0)
+    TYU_city_dict = S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=1)
+    TCH_city_dict = S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=2)
+    TNA_city_dict = S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=3)
+    KSH_city_dict = S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=4)
 
     # 設定搜尋參數：半徑與步長
     search_setting = S_search_setting(radius=3000, step=3000)
@@ -284,10 +338,65 @@ def d_02_gmap_full_search():
     metadata_save_setting = S_get_metadata_save_setting()
 
     # 將metadata的紀錄存檔成csv
-    dfm.L_save_file_to_csv(
-        folder=metadata_save_setting["folder"],
-        file_name=metadata_save_setting["file_name"],
-        df=df_metadata)
+    dfm.L_save_file_to_csv_by_dict(
+        save_setting=metadata_save_setting, df=df_metadata)
+
+    # 簡單清理檔案
+    # 去除place id重複資料
+    df_TPE = T_drop_duplicated(df=df_TPE)
+    df_TYU = T_drop_duplicated(df=df_TYU)
+    df_TCH = T_drop_duplicated(df=df_TCH)
+    df_TNA = T_drop_duplicated(df=df_TNA)
+    df_KSH = T_drop_duplicated(df=df_KSH)
+
+    # 去除非正常營業資料
+    df_TPE = T_keep_operation_store(df=df_TPE)
+    df_TYU = T_keep_operation_store(df=df_TYU)
+    df_TCH = T_keep_operation_store(df=df_TCH)
+    df_TNA = T_keep_operation_store(df=df_TNA)
+    df_KSH = T_keep_operation_store(df=df_KSH)
+
+    # 去除沒有地理資料的店家
+    df_TPE = T_drop_no_geometry(df=df_TPE)
+    df_TYU = T_drop_no_geometry(df=df_TYU)
+    df_TCH = T_drop_no_geometry(df=df_TCH)
+    df_TNA = T_drop_no_geometry(df=df_TNA)
+    df_KSH = T_drop_no_geometry(df=df_KSH)
+
+    # 根據地理資訊查詢是否真的在六都邊界內
+    df_TPE = T_detect_in_boundary_or_not(df=df_TPE, city_dict=TPE_city_dict)
+    df_TYU = T_detect_in_boundary_or_not(df=df_TYU, city_dict=TYU_city_dict)
+    df_TCH = T_detect_in_boundary_or_not(df=df_TCH, city_dict=TCH_city_dict)
+    df_TNA = T_detect_in_boundary_or_not(df=df_TNA, city_dict=TNA_city_dict)
+    df_KSH = T_detect_in_boundary_or_not(df=df_KSH, city_dict=KSH_city_dict)
+
+    # 去除不在邊界內的資料
+    df_TPE = T_drop_data_out_boundary(df=df_TPE)
+    df_TYU = T_drop_data_out_boundary(df=df_TYU)
+    df_TCH = T_drop_data_out_boundary(df=df_TCH)
+    df_TNA = T_drop_data_out_boundary(df=df_TNA)
+    df_KSH = T_drop_data_out_boundary(df=df_KSH)
+
+    # 將五個df合併
+    df_main = pdm.T_combine_five_dataframe(
+        df1=df_TPE,
+        df2=df_TYU,
+        df3=df_TCH,
+        df4=df_TNA,
+        df5=df_KSH
+    )
+
+    # 合併後再次去除重複place id資料
+    df_main = T_drop_duplicated(df=df_main)
+
+    # 新增更新日期
+    df_main = T_add_update_date(df=df_main)
+
+    # 取得存檔設定
+    main_save_setting = S_get_main_save_setting(keyword_dict=keyword_dict)
+
+    # 存檔至地端
+    dfm.L_save_file_to_csv_by_dict(save_setting=main_save_setting, df=df_main)
 
 
-d_02_gmap_full_search()
+d_02_2_gmap_full_search_restaurant()

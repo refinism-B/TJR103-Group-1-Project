@@ -41,7 +41,6 @@ GSEARCH_CITY_CODE = {
 }
 
 
-
 PET_REGIS_COLUMNS_NAME = [
     "area_id",
     "district",
@@ -73,10 +72,51 @@ PET_REGIS_DROP_COLUMNS = [
 ]
 
 
-PET_REGIS_FINAL_COLUMNS = ["loc_id",
+PET_REGIS_FINAL_COLUMNS = [
+    "loc_id",
     "date",
     "animal",
     "regis_count",
     "removal_count",
     "update_date"
+]
+
+
+STORE_DROP_KEY_WORDS = [
+    "停業",
+    "歇業",
+    "暫停營業",
+    "暫停服務",
+    "停止營業",
+    "停止服務"
+]
+
+
+ADDRESS_DROP_KEYWORDS = [
+    "路",
+    "街",
+    "巷",
+    "弄",
+    "段",
+    "道"
+]
+
+
+GMAP_INFO_SEARCH_FINAL_COLUMNS = [
+    "id", 'name',
+    'buss_status',
+    'loc_id',
+    'address',
+    'phone',
+    "op_hours",
+    'category_id',
+    'rating',
+    'rating_total',
+    'newest_review',
+    'longitude',
+    'latitude',
+    'map_url',
+    'website',
+    'place_id',
+    'update_time'
 ]

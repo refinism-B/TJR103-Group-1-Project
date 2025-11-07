@@ -1,6 +1,7 @@
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
+import time
 
 import pandas as pd
 import requests
@@ -23,13 +24,14 @@ default_args = {
 
 
 @dag(
-    dag_id="d_test07_daily_pet_regis",
+    dag_id="d_01_pet_regis_count_daily",
     default_args=default_args,
     description="[每日更新]爬取每日寵物登記數",
-    schedule_interval="*/45 * * * *",
+    schedule_interval="0 */1 * * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
-    tags=["bevis", "daily"]  # Optional: Add tags for better filtering in the UI
+    # Optional: Add tags for better filtering in the UI
+    tags=["bevis", "daily", "test_done"]
 )
 def d_01_pet_regis_count():
     @task
@@ -56,7 +58,11 @@ def d_01_pet_regis_count():
         return data_dict
 
     @task
-    def S_create_post_data(start_date: str, end_date: str, ani: str, city: str) -> dict:
+    def S_create_post_data(dict_name: dict, ani: str) -> dict:
+        start_date = dict_name["start_date"]
+        end_date = dict_name["end_date"]
+        city = dict_name["city"]
+
         return {
             "Method": "O302C_2",
             "Param": json.dumps(
@@ -80,11 +86,12 @@ def d_01_pet_regis_count():
 
         return data_json
 
-    @task(retries=3, retry_delay=timedelta(seconds=10))
+    @task(retries=3, retry_delay=timedelta(seconds=30))
     def E_get_main_data(data_dict: dict, data: dict) -> pd.DataFrame:
         data_json = post_requests(
             url=data_dict["url"], headers=data_dict["headers"], data=data)
         df = pd.DataFrame(data_json)
+        time.sleep(5)
 
         return df
 
@@ -96,6 +103,13 @@ def d_01_pet_regis_count():
         df["update_date"] = data_dict["end_date"]
 
         return df
+
+    @task
+    def S_get_save_setting(dict_name: dict) -> dict:
+        folder = dict_name["folder"]
+        file_name = dict_name["file_name"]
+
+        return {"folder": folder, "file_name": file_name}
 
     @task
     def T_trans_city_to_ch(df: pd.DataFrame, city_dict: dict) -> pd.DataFrame:
@@ -128,11 +142,13 @@ def d_01_pet_regis_count():
         file_name = "daily_regis.csv"
         path = folder / file_name
         try:
-            df.to_csv(path, index=False, encoding="utf-8")
+            df.to_csv(path, index=False, encoding="utf-8-sig")
             print(f"{file_date}資料地端存檔成功！")
 
         except Exception as e:
             print(f"{file_date}資料存檔失敗：{e}")
+
+    """程式正式開始"""
 
     # 取得六都與代碼對照表
     city_dict = cfg.CITY_NAME_CODE_DICT
@@ -146,30 +162,18 @@ def d_01_pet_regis_count():
     data_dict_KSH = S_get_requests_data_dict(city_dict=city_dict, city_index=5)
 
     # 建立六都貓、狗的post資料表
-    data_NTP_dog = S_create_post_data(
-        start_date=data_dict_NTP["start_date"], end_date=data_dict_NTP["end_date"], ani="0", city=data_dict_NTP["city"])
-    data_NTP_cat = S_create_post_data(
-        start_date=data_dict_NTP["start_date"], end_date=data_dict_NTP["end_date"], ani="1", city=data_dict_NTP["city"])
-    data_TPE_dog = S_create_post_data(
-        start_date=data_dict_TPE["start_date"], end_date=data_dict_TPE["end_date"], ani="0", city=data_dict_TPE["city"])
-    data_TPE_cat = S_create_post_data(
-        start_date=data_dict_TPE["start_date"], end_date=data_dict_TPE["end_date"], ani="1", city=data_dict_TPE["city"])
-    data_TYN_dog = S_create_post_data(
-        start_date=data_dict_TYN["start_date"], end_date=data_dict_TYN["end_date"], ani="0", city=data_dict_TYN["city"])
-    data_TYN_cat = S_create_post_data(
-        start_date=data_dict_TYN["start_date"], end_date=data_dict_TYN["end_date"], ani="1", city=data_dict_TYN["city"])
-    data_TCH_dog = S_create_post_data(
-        start_date=data_dict_TCH["start_date"], end_date=data_dict_TCH["end_date"], ani="0", city=data_dict_TCH["city"])
-    data_TCH_cat = S_create_post_data(
-        start_date=data_dict_TCH["start_date"], end_date=data_dict_TCH["end_date"], ani="1", city=data_dict_TCH["city"])
-    data_TNA_dog = S_create_post_data(
-        start_date=data_dict_TNA["start_date"], end_date=data_dict_TNA["end_date"], ani="0", city=data_dict_TNA["city"])
-    data_TNA_cat = S_create_post_data(
-        start_date=data_dict_TNA["start_date"], end_date=data_dict_TNA["end_date"], ani="1", city=data_dict_TNA["city"])
-    data_KSH_dog = S_create_post_data(
-        start_date=data_dict_KSH["start_date"], end_date=data_dict_KSH["end_date"], ani="0", city=data_dict_KSH["city"])
-    data_KSH_cat = S_create_post_data(
-        start_date=data_dict_KSH["start_date"], end_date=data_dict_KSH["end_date"], ani="1", city=data_dict_KSH["city"])
+    data_NTP_dog = S_create_post_data(dict_name=data_dict_NTP, ani="0")
+    data_NTP_cat = S_create_post_data(dict_name=data_dict_NTP, ani="1")
+    data_TPE_dog = S_create_post_data(dict_name=data_dict_TPE, ani="0")
+    data_TPE_cat = S_create_post_data(dict_name=data_dict_TPE, ani="1")
+    data_TYN_dog = S_create_post_data(dict_name=data_dict_TYN, ani="0")
+    data_TYN_cat = S_create_post_data(dict_name=data_dict_TYN, ani="1")
+    data_TCH_dog = S_create_post_data(dict_name=data_dict_TCH, ani="0")
+    data_TCH_cat = S_create_post_data(dict_name=data_dict_TCH, ani="1")
+    data_TNA_dog = S_create_post_data(dict_name=data_dict_TNA, ani="0")
+    data_TNA_cat = S_create_post_data(dict_name=data_dict_TNA, ani="1")
+    data_KSH_dog = S_create_post_data(dict_name=data_dict_KSH, ani="0")
+    data_KSH_cat = S_create_post_data(dict_name=data_dict_KSH, ani="1")
 
     # 逐一爬取六都貓狗資料
     df_NTP_dog = E_get_main_data(data_dict=data_dict_NTP, data=data_NTP_dog)
@@ -207,19 +211,21 @@ def d_01_pet_regis_count():
     df_TNA = pdm.T_combine_dataframe(df1=df_TNA_dog, df2=df_TNA_cat)
     df_KSH = pdm.T_combine_dataframe(df1=df_KSH_dog, df2=df_KSH_cat)
 
+    # 取得六都存檔設定
+    NTP_save_setting = S_get_save_setting(dict_name=data_dict_NTP)
+    TPE_save_setting = S_get_save_setting(dict_name=data_dict_TPE)
+    TYN_save_setting = S_get_save_setting(dict_name=data_dict_TYN)
+    TCH_save_setting = S_get_save_setting(dict_name=data_dict_TCH)
+    TNA_save_setting = S_get_save_setting(dict_name=data_dict_TNA)
+    KSH_save_setting = S_get_save_setting(dict_name=data_dict_KSH)
+
     # 將六都合併後的df先存檔紀錄
-    dfm.L_save_file_to_csv(
-        folder=data_dict_NTP["folder"], file_name=data_dict_NTP["file_name"], df=df_NTP)
-    dfm.L_save_file_to_csv(
-        folder=data_dict_TPE["folder"], file_name=data_dict_TPE["file_name"], df=df_TPE)
-    dfm.L_save_file_to_csv(
-        folder=data_dict_TYN["folder"], file_name=data_dict_TYN["file_name"], df=df_TYN)
-    dfm.L_save_file_to_csv(
-        folder=data_dict_TCH["folder"], file_name=data_dict_TCH["file_name"], df=df_TCH)
-    dfm.L_save_file_to_csv(
-        folder=data_dict_TNA["folder"], file_name=data_dict_TNA["file_name"], df=df_TNA)
-    dfm.L_save_file_to_csv(
-        folder=data_dict_KSH["folder"], file_name=data_dict_KSH["file_name"], df=df_KSH)
+    dfm.L_save_file_to_csv_by_dict(save_setting=NTP_save_setting, df=df_NTP)
+    dfm.L_save_file_to_csv_by_dict(save_setting=TPE_save_setting, df=df_TPE)
+    dfm.L_save_file_to_csv_by_dict(save_setting=TYN_save_setting, df=df_TYN)
+    dfm.L_save_file_to_csv_by_dict(save_setting=TCH_save_setting, df=df_TCH)
+    dfm.L_save_file_to_csv_by_dict(save_setting=TNA_save_setting, df=df_TNA)
+    dfm.L_save_file_to_csv_by_dict(save_setting=KSH_save_setting, df=df_KSH)
 
     # 將六都df合併為單一主表
     df_main = pdm.T_combine_six_dataframe(
