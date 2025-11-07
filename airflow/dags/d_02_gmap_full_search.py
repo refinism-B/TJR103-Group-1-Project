@@ -9,11 +9,11 @@ import pandas as pd
 from airflow.decorators import dag, task
 from dotenv import load_dotenv
 from shapely.geometry import Point
-from sqlalchemy import create_engine
 from tasks import database_file_mod as dfm
 from tasks import pandas_mod as pdm
 from utils import gmap_mod as gm
 from utils.config import GSEARCH_CITY_CODE, STORE_TYPE_ENG_CH_DICT
+
 
 # 設定DAG基本資訊
 default_args = {

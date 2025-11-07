@@ -1,6 +1,4 @@
 import json
-import os
-import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -10,6 +8,7 @@ from airflow.decorators import dag, task
 from tasks import database_file_mod as dfm
 from tasks import pandas_mod as pdm
 from utils import config as cfg
+
 
 # 設定DAG基本資訊
 default_args = {
