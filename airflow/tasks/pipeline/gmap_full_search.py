@@ -15,6 +15,7 @@ from utils.config import GSEARCH_CITY_CODE, STORE_TYPE_ENG_CH_DICT
 
 
 def S_get_gdf() -> gpd.GeoDataFrame:
+    """取得gml檔案，並轉換成gdf物件"""
     folder = Path("/opt/airflow/utils")
     file_name = "COUNTY_MOI_1140318.gml"
     path = folder / file_name
@@ -25,6 +26,7 @@ def S_get_gdf() -> gpd.GeoDataFrame:
 
 
 def S_get_city_geodata(city_name: str):
+    """輸入縣市名稱，取得該縣市的地理資料"""
     gdf = S_get_gdf()
     city_idx = gdf[gdf["名稱"] == city_name].index
     geo_data = gdf.loc[city_idx].geometry.values[0]
@@ -34,13 +36,26 @@ def S_get_city_geodata(city_name: str):
 
 @task
 def S_get_city_data(dict_name: dict, index: int) -> dict:
+    """
+    根據輸入的index索引值，設定六都的名稱和代號。
+    0為新北市（TPE），1為桃園市（TYU），2為台中市（TCH），
+    3為臺南市（TNA），4為高雄市（KSH）。
+
+    附註：台北市包含在新北市內。
+    """
+
     city_name_list = list(dict_name.keys())
     city_code_list = list(dict_name.values())
     return {"city_name": city_name_list[index], "city_code": city_code_list[index]}
 
 
 @task
-def S_get_keyword_dict(dict_name: dict, index: int):
+def S_get_keyword_dict(dict_name: dict, index: int) -> dict:
+    """
+    根據輸入的索引值，設定搜尋的關鍵字及對應英文檔案名。
+    0為寵物美容，1為寵物餐廳，2為寵物用品。
+    """
+
     keyword_list = list(dict_name.keys())
     file_name_list = list(dict_name.values())
     return {
@@ -49,7 +64,8 @@ def S_get_keyword_dict(dict_name: dict, index: int):
 
 
 @task
-def S_search_setting(radius: int, step: int):
+def S_search_setting(radius: int, step: int) -> dict:
+    """用於設定搜尋半徑，以及點與點之間的步長，並組成一個dict"""
     return {
         "radius": radius,
         "step": step
@@ -58,6 +74,11 @@ def S_search_setting(radius: int, step: int):
 
 @task
 def S_set_loc_point(search_setting: dict, city_name: str) -> list:
+    """
+    將搜尋的設定檔以及搜尋的縣市傳入，
+    會自動計算並設定範圍內所有座標點。
+    """
+
     geo_data = S_get_city_geodata(city_name=city_name)
 
     step_m = search_setting["step"]
@@ -82,11 +103,18 @@ def S_set_loc_point(search_setting: dict, city_name: str) -> list:
 
 @task
 def E_gmap_search(
-        city_data: dict,
-        keyword: dict,
-        search_setting: dict,
-        loc_points: list,
-):
+    city_data: dict,
+    keyword: dict,
+    search_setting: dict,
+    loc_points: list,
+) -> dict:
+    """
+    輸入六都資料、關鍵字、搜尋設定和座標點列表，
+    使用gmap自動開始地理搜尋。
+    且只有在縣市邊界內的座標點會被搜尋。
+    同時會記錄搜尋次數、資料筆數、搜尋設定等，
+    作為下次搜尋設定的參考紀錄。
+    """
 
     geo_data = S_get_city_geodata(city_name=city_data["city_name"])
 
@@ -141,6 +169,7 @@ def E_gmap_search(
 
 @task
 def T_transform_to_df(result_dict: dict) -> pd.DataFrame:
+    """將搜尋結果轉換成dataframe"""
     data = result_dict["data"]
     df = pd.DataFrame(data=data)
     df["update_time"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
@@ -150,6 +179,7 @@ def T_transform_to_df(result_dict: dict) -> pd.DataFrame:
 
 @task
 def T_transform_metadata_df(result_dict: dict) -> pd.DataFrame:
+    """將metadata轉換成dataframe"""
     data = result_dict["metadata"]
     df = pd.DataFrame(data=data, index=[0])
 
@@ -157,26 +187,30 @@ def T_transform_metadata_df(result_dict: dict) -> pd.DataFrame:
 
 
 @task
-def S_get_save_setting(keyword_dict: dict, city_dict: dict):
+def S_get_save_setting(keyword_dict: dict, city_dict: dict) -> dict:
+    """取得存檔設定的dict"""
     folder = f"/opt/airflow/data/raw/{keyword_dict['file_name']}"
     file_name = f"{city_dict['city_code']}_{keyword_dict['file_name']}.csv"
     return {"folder": folder, "file_name": file_name}
 
 
-def S_get_metadata_save_setting():
+def S_get_metadata_save_setting() -> dict:
+    """取得metadata的存檔設定dict"""
     file_date = date.today().strftime('%Y%m%d')
     folder = "/opt/airflow/data/complete/gmap_record"
     file_name = f"{file_date}_gmap_record.csv"
     return {"folder": folder, "file_name": file_name}
 
 
-def in_boundary(city_geo_data, lat, lon):
+def in_boundary(city_geo_data, lat, lon) -> bool:
+    """判斷一組座標點是否在一個縣市的邊界內"""
     loc_p = Point(lon, lat)
     return city_geo_data.contains(loc_p)
 
 
 @task
 def T_keep_operation_store(df: pd.DataFrame) -> pd.DataFrame:
+    """只保留營業狀態為正常營業的資料"""
     mask = (df["buss_status"] == "OPERATIONAL")
     df = df[mask]
 
@@ -185,6 +219,7 @@ def T_keep_operation_store(df: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def T_drop_duplicated(df: pd.DataFrame) -> pd.DataFrame:
+    """去除place id重複的資料"""
     df = df.drop_duplicates(subset=["place_id"], keep="first")
 
     return df
@@ -192,12 +227,14 @@ def T_drop_duplicated(df: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def T_drop_no_geometry(df: pd.DataFrame) -> pd.DataFrame:
+    """去除沒有地理資訊的資料"""
     df = df.dropna(subset=["geometry"])
 
     return df
 
 
 def to_dict_if_str(object):
+    """輸入的若是字串，則轉成list，如果不是則原檔輸出"""
     if isinstance(object, str):
         return ast.literal_eval(object)
     else:
@@ -206,6 +243,11 @@ def to_dict_if_str(object):
 
 @task
 def T_detect_in_boundary_or_not(df: pd.DataFrame, city_dict: dict) -> pd.DataFrame:
+    """
+    判斷輸入的dataframe資料中，每個地標是否在邊界內，
+    並新增欄位放入判斷結果。
+    """
+
     geo_data = S_get_city_geodata(city_name=city_dict["city_name"])
     boundary_list = []
     df["geometry"] = df["geometry"].apply(to_dict_if_str)
@@ -225,6 +267,7 @@ def T_detect_in_boundary_or_not(df: pd.DataFrame, city_dict: dict) -> pd.DataFra
 
 @task
 def T_drop_data_out_boundary(df: pd.DataFrame) -> pd.DataFrame:
+    """只保留地點真的在縣市邊界內的資料"""
     mask = (df["in_boundary"] == True)
     df = df[mask]
 
@@ -233,6 +276,7 @@ def T_drop_data_out_boundary(df: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def T_add_update_date(df: pd.DataFrame) -> pd.DataFrame:
+    """新增更新日期欄位，並以今天為更新日"""
     today = date.today().strftime('%Y/%m/%d')
     df["update_date"] = today
 
@@ -241,6 +285,7 @@ def T_add_update_date(df: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def S_get_main_save_setting(keyword_dict: dict) -> dict:
+    """設定主要檔案的存檔資訊"""
     folder = f"/opt/airflow/data/processed/{keyword_dict['file_name']}"
     file_name = f"{keyword_dict['file_name']}_place_id.csv"
 

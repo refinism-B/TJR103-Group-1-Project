@@ -1,24 +1,28 @@
 import os
 import re
 import time
-from datetime import date, datetime, timedelta
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
 from airflow.decorators import dag, task
 from dotenv import load_dotenv
 from opencc import OpenCC
-from tasks import database_file_mod as dfm
 from tasks import date_mod as dtm
-from tasks import pandas_mod as pdm
 from utils import gmap_mod as gm
-from utils.config import (ADDRESS_DROP_KEYWORDS, STORE_DROP_KEY_WORDS,
+from utils.config import (ADDRESS_DROP_KEYWORDS,
+                          GMAP_INFO_SEARCH_FINAL_COLUMNS, STORE_DROP_KEY_WORDS,
                           STORE_TYPE_CODE_DICT, STORE_TYPE_ENG_CH_DICT,
-                          WORDS_REPLACE_FROM_ADDRESS, GMAP_INFO_SEARCH_FINAL_COLUMNS)
+                          WORDS_REPLACE_FROM_ADDRESS)
 
 
 @task
 def S_get_keyword_dict(dict_name: dict, index: int) -> dict:
+    """
+    設定要處理的店家類型，
+    0為寵物美容，1為寵物餐廳，2為寵物用品。
+    """
+
     keyword_ch_list = list(dict_name.keys())
     keyword_list = list(dict_name.values())
 
@@ -27,6 +31,7 @@ def S_get_keyword_dict(dict_name: dict, index: int) -> dict:
 
 @task
 def S_get_read_setting(keyword_dict: dict) -> dict:
+    """設定讀取檔案的路徑資訊"""
     folder = f"/opt/airflow/data/processed/{keyword_dict['file_name']}"
     file_name = f"{keyword_dict['file_name']}_place_id.csv"
 
@@ -34,7 +39,8 @@ def S_get_read_setting(keyword_dict: dict) -> dict:
 
 
 @task
-def S_get_temp_save_setting(keyword_dict: dict):
+def S_get_temp_save_setting(keyword_dict: dict) -> dict:
+    """設定迴圈中的臨時存檔資訊"""
     folder = f"/opt/airflow/data/raw/{keyword_dict['file_name']}/info"
     file_name = f"{keyword_dict['file_name']}_temp.csv"
 
@@ -43,6 +49,11 @@ def S_get_temp_save_setting(keyword_dict: dict):
 
 @task
 def E_get_store_info_by_gmap(df: pd.DataFrame, temp_save_setting: dict) -> pd.DataFrame:
+    """
+    根據dataframe中的place id進行gmap詳細資料搜尋，
+    並在每次搜尋時都進行臨時存檔。
+    """
+
     load_dotenv()
     api_key = os.getenv("GMAP_KEY6")
     place_id_list = df["place_id"].values
@@ -73,6 +84,7 @@ def E_get_store_info_by_gmap(df: pd.DataFrame, temp_save_setting: dict) -> pd.Da
 
 @task
 def T_keep_needed_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """僅保留需要的欄位資料"""
     cols = ['place_id', 'address', 'phone', 'opening_hours', 'rating',
             'rating_total', 'longitude', 'latitude', 'map_url', 'website', 'newest_review']
     df = df[cols]
@@ -82,6 +94,7 @@ def T_keep_needed_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def T_merge_df(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+    """將兩個df進行merge，並根據place id欄位合併"""
     df = df1.merge(df2, how="left", on="place_id")
 
     return df
@@ -89,6 +102,7 @@ def T_merge_df(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def S_get_raw_info_save_setting(keyword_dict: dict) -> dict:
+    """設定爬取的原始資料的存檔資訊"""
     folder = f"/opt/airflow/data/raw/{keyword_dict['file_name']}/info"
     file_name = f"{keyword_dict['file_name']}_info_raw.csv"
 
@@ -98,6 +112,7 @@ def S_get_raw_info_save_setting(keyword_dict: dict) -> dict:
 
 @task
 def T_drop_data_by_store_name(df: pd.DataFrame, keyword_list: list) -> pd.DataFrame:
+    """去除店家名稱包含某些關鍵字（通常表示歇業或沒有提供服務）的資料"""
     del_idx = []
 
     for keyword in keyword_list:
@@ -113,6 +128,11 @@ def T_drop_data_by_store_name(df: pd.DataFrame, keyword_list: list) -> pd.DataFr
 
 @task
 def T_drop_cols_and_na(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    去除"in_boundary", "update_date", "geometry"三個欄位，
+    並去除地址為空值的資料。
+    """
+
     drop_cols = ["in_boundary", "update_date", "geometry"]
     df = df.drop(columns=drop_cols, axis=1)
     df = df.dropna(subset=["address"])
@@ -122,6 +142,7 @@ def T_drop_cols_and_na(df: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def T_add_category_and_fillna(df: pd.DataFrame, keyword_dict: dict) -> pd.DataFrame:
+    """增加類別欄位，並將評論數、評分為空值的補0"""
     df["category"] = keyword_dict["keyword"]
 
     df[["rating", "rating_total"]] = df[[
@@ -132,6 +153,10 @@ def T_add_category_and_fillna(df: pd.DataFrame, keyword_dict: dict) -> pd.DataFr
 
 @task
 def T_clean_address(df: pd.DataFrame, replace_dict: dict) -> pd.DataFrame:
+    """
+    清理地址欄位：先做簡轉繁確保都是繁體、並替換一些錯別字。
+    並新增市及區欄位（先填入空值）。
+    """
     cc = OpenCC("s2t")
     df["address"] = df["address"].apply(cc.convert)
 
@@ -146,6 +171,7 @@ def T_clean_address(df: pd.DataFrame, replace_dict: dict) -> pd.DataFrame:
 
 @task
 def T_first_address_format(df: pd.DataFrame, pattern: str) -> pd.DataFrame:
+    """抓取市、區資料。第一種情況：正常地址格式"""
     mask1 = df["address"].str.contains(pattern, regex=True, na=False)
     extracted1 = df.loc[mask1, "address"].str.extract(pattern)
     df.loc[mask1, ["city", "district"]] = extracted1.values
@@ -155,6 +181,7 @@ def T_first_address_format(df: pd.DataFrame, pattern: str) -> pd.DataFrame:
 
 @task
 def T_second_address_format(df: pd.DataFrame, pattern: str) -> pd.DataFrame:
+    """抓取市、區資料。第二種情況：倒反地址格式"""
     mask3 = df["address"].str.contains(pattern, regex=True, na=False)
     extracted3 = df.loc[mask3, "address"].str.extract(pattern)
 
@@ -166,6 +193,7 @@ def T_second_address_format(df: pd.DataFrame, pattern: str) -> pd.DataFrame:
 
 @task
 def T_third_address_format(df: pd.DataFrame, pattern: str) -> pd.DataFrame:
+    """抓取市、區資料。第三種情況：只有區沒有市"""
     mask2 = df["address"].str.contains(pattern, regex=True, na=False)
     extracted2 = df.loc[mask2, "address"].str.extract(pattern)
     df.loc[mask2, "district"] = extracted2[0].values
@@ -175,6 +203,7 @@ def T_third_address_format(df: pd.DataFrame, pattern: str) -> pd.DataFrame:
 
 @task
 def T_clean_district_word(df: pd.DataFrame, drop_word_list: list) -> pd.DataFrame:
+    """清理"區"的資料，將不乾淨的字元去除"""
     df["district"] = df["district"].str.replace("路竹", "鹿竹")
     pattern4 = "|".join(map(re.escape, drop_word_list))
     df["district"] = df["district"].str.replace(pattern4, "", regex=True)
@@ -185,6 +214,7 @@ def T_clean_district_word(df: pd.DataFrame, drop_word_list: list) -> pd.DataFram
 
 @task
 def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataFrame:
+    """與location資料merge，並只保留loc id"""
     df_loc = pd.DataFrame(df_loc)
     df_loc = df_loc[["loc_id", "city", "district"]]
 
@@ -207,6 +237,7 @@ def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataF
 
 @task
 def T_df_merge_category(df_main: pd.DataFrame, df_category: pd.DataFrame) -> pd.DataFrame:
+    """與category資料merge，並指保留category id"""
     df_category = pd.DataFrame(df_category)
     df_main = df_main.merge(df_category, how="left",
                             left_on="category", right_on="category_name")
@@ -218,6 +249,7 @@ def T_df_merge_category(df_main: pd.DataFrame, df_category: pd.DataFrame) -> pd.
 
 @task
 def S_get_id_columns_setting(type_dict: dict, keyword_dict: dict) -> pd.DataFrame:
+    """取得id欄位的設定dict"""
     store_type_name = keyword_dict["keyword"]
     id_str = type_dict[store_type_name]
 
@@ -226,13 +258,15 @@ def S_get_id_columns_setting(type_dict: dict, keyword_dict: dict) -> pd.DataFram
 
 @task
 def T_add_id_empty_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """將dataframe建立空字串的id欄位"""
     df["id"] = ""
 
     return df
 
 
 @task
-def T_trans_op_time_to_hours(df: pd.DataFrame):
+def T_trans_op_time_to_hours(df: pd.DataFrame) -> pd.DataFrame:
+    """將營業時間資料轉換成營業的時數（以週為單位）"""
     op_hours_list = []
     for index, row in df.iterrows():
         op_time = row["opening_hours"]
@@ -247,6 +281,7 @@ def T_trans_op_time_to_hours(df: pd.DataFrame):
 
 @task
 def S_get_finish_save_setting(keyword_dict: dict) -> dict:
+    """取得完成檔的存檔資訊"""
     file_date = date.today().strftime("%Y%m%d")
     folder = f"/opt/airflow/data/complete/{keyword_dict['file_name']}/dt={file_date}"
     file_name = f"{keyword_dict['file_name']}_finish.csv"
@@ -256,6 +291,7 @@ def S_get_finish_save_setting(keyword_dict: dict) -> dict:
 
 @task
 def S_print_result(ori_count: int, finish_count: int):
+    """將資料清理前後的筆數相比，顯示清理的結果如何"""
     clean_count = ori_count - finish_count
     print(f"清理前資料筆數：{ori_count}")
     print(f"清理後資料筆數：{finish_count}")

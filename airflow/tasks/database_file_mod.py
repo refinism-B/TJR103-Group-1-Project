@@ -1,10 +1,8 @@
 import pandas as pd
 from pathlib import Path
-from datetime import date, datetime, timedelta
 import os
 from dotenv import load_dotenv
 from airflow.decorators import task
-from sqlalchemy import create_engine
 import pymysql
 
 
