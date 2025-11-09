@@ -1,8 +1,9 @@
 import pandas as pd
 from pathlib import Path
 import os
-from datetime import time, date, datetime, timedelta
 from airflow.decorators import task
+from typing import Tuple
+
 
 """
 這個模組是關於pandas應用的自訂函式
@@ -11,7 +12,7 @@ from airflow.decorators import task
 
 
 @task
-def read_or_build(folder, file, columns):
+def read_or_build(folder: str, file: str, columns: list) -> Tuple[pd.DataFrame, str]:
     """檢查路徑檔案是否存在，若有則讀取，無則建立空表格"""
     file_path = os.path.join(folder, file)
     path = Path(file_path)
@@ -26,8 +27,8 @@ def read_or_build(folder, file, columns):
 
 
 @task
-def exist_or_not(folder, file):
-    """檢查路徑檔案是否存在，若有則讀取，無則建立空表格"""
+def exist_or_not(folder: str, file: str) -> Tuple[bool, str]:
+    """檢查路徑檔案是否存在，並回傳確認結果"""
     file_path = os.path.join(folder, file)
     path = Path(file_path)
 
@@ -35,12 +36,16 @@ def exist_or_not(folder, file):
 
 
 @task
-def T_reassign_id(df: pd.DataFrame, setting_dict: dict):
-    """根據原有最後一筆資料進行自動延續編號
-    對於未編號的資料，需要先建立id欄位並且賦予空字串
-    df請輸入想要增加編號的df
-    id_col_name請輸入id的「欄位名」
-    id_str請輸入編號的「前綴字串」"""
+def T_reassign_id(df: pd.DataFrame, setting_dict: dict) -> pd.DataFrame:
+    """
+    功能為針對id欄位自動編號。
+    需要提供要加上id編號的dataframe，
+    以及"setting_dict"編號設定檔。
+    設定檔中需定義："id_cols"為id欄位的名稱；
+    "id_str"為編號的前綴字串。
+
+    注意：尚未編號的資料請先填入空字串「""」。
+    """
 
     id_col_name = setting_dict["id_cols"]
     id_str = setting_dict["id_str"]
@@ -70,6 +75,7 @@ def T_reassign_id(df: pd.DataFrame, setting_dict: dict):
 
 @task
 def T_combine_dataframe(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+    """concat兩個dataframe"""
     df_combine = pd.concat([df1, df2], ignore_index=True)
 
     return df_combine
@@ -84,7 +90,7 @@ def T_combine_six_dataframe(
     df5: pd.DataFrame,
     df6: pd.DataFrame,
 ) -> pd.DataFrame:
-
+    """concat六個dataframe"""
     df_combine = pd.concat([df1, df2, df3, df4, df5, df6], ignore_index=True)
 
     return df_combine
@@ -98,7 +104,7 @@ def T_combine_five_dataframe(
     df4: pd.DataFrame,
     df5: pd.DataFrame,
 ) -> pd.DataFrame:
-
+    """concat五個dataframe"""
     df_combine = pd.concat([df1, df2, df3, df4, df5], ignore_index=True)
 
     return df_combine
@@ -106,6 +112,11 @@ def T_combine_five_dataframe(
 
 @task
 def T_rename_columns(df: pd.DataFrame, col_list: list) -> pd.DataFrame:
+    """
+    將df的欄位名稱替換成list中的內容。
+    請注意欄位數與list內數量需一致。
+    """
+
     if len(df.columns) != len(col_list):
         raise ValueError("DF欄位數與列表長度不符合！")
     else:
@@ -115,6 +126,7 @@ def T_rename_columns(df: pd.DataFrame, col_list: list) -> pd.DataFrame:
 
 @task
 def T_drop_columns(df: pd.DataFrame, drop_list: list) -> pd.DataFrame:
+    """去除給定的欄位名"""
     missing_cols = [col for col in drop_list if col not in df.columns]
     if len(missing_cols) != 0:
         raise ValueError("某些欄位不存在df中！")
@@ -125,6 +137,11 @@ def T_drop_columns(df: pd.DataFrame, drop_list: list) -> pd.DataFrame:
 
 @task
 def T_sort_columns(df: pd.DataFrame, new_cols: list) -> pd.DataFrame:
+    """
+    將df欄位順序改為list中的順序。
+    注意：欄位名需一致，僅順序可以不同。
+    """
+
     missing_cols = [col for col in new_cols if col not in df.columns]
     if len(missing_cols) != 0:
         raise ValueError("某些欄位不存在df中！")
@@ -135,11 +152,13 @@ def T_sort_columns(df: pd.DataFrame, new_cols: list) -> pd.DataFrame:
 
 @task
 def T_transform_to_df(data: list[dict]) -> pd.DataFrame:
+    """將包含多個dict的list轉換成dataframe"""
     df = pd.DataFrame(data=data)
     return df
 
 
 @task
 def S_count_data(df: pd.DataFrame) -> int:
+    """計算並回傳df的資料筆數"""
     count = len(df)
     return count

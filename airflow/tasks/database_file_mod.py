@@ -8,7 +8,21 @@ from sqlalchemy import create_engine
 import pymysql
 
 
+"""
+這個模組主要用於資料或檔案的存取/讀取。
+其中由於sqlalchemy版本相容問題無法使用，
+而pymysql在寫入資料上較繁複，
+暫時未編寫「將資料寫入資料庫」的函式。
+通常寫作 import database_file_mod as dfm
+"""
+
+
 def create_pymysql_connect():
+    """
+    自動透過pymysql建立連線，回傳conn連線物件。
+    所需各項資料請寫入.env檔案中。請勿直接寫於程式中。
+    """
+
     load_dotenv()
 
     username = os.getenv("MYSQL_USERNAME")
@@ -31,6 +45,11 @@ def create_pymysql_connect():
 
 @task
 def L_save_file_to_csv_by_dict(save_setting: dict, df: pd.DataFrame):
+    """
+    提供"save_setting"的存檔設定dict，抓取其中的"folder"和"file_name"
+    資料，自動將df存檔成csv檔案。
+    """
+
     try:
         folder = Path(save_setting["folder"])
         folder.mkdir(parents=True, exist_ok=True)
@@ -45,6 +64,10 @@ def L_save_file_to_csv_by_dict(save_setting: dict, df: pd.DataFrame):
 
 @task
 def L_save_file_to_csv(folder: str, file_name: str, df: pd.DataFrame):
+    """
+    提供folder路徑和file_name檔案名稱，自動將df存檔成csv檔案。
+    """
+
     try:
         folder = Path(folder)
         folder.mkdir(parents=True, exist_ok=True)
@@ -58,19 +81,12 @@ def L_save_file_to_csv(folder: str, file_name: str, df: pd.DataFrame):
 
 
 @task
-def E_load_file_from_csv(folder: str, file_name: str) -> pd.DataFrame:
-    folder = Path(folder)
-    path = folder / file_name
-    cols = pd.read_csv(path, nrows=0).columns
-
-    dtype_dict = {col: str for col in cols if col.lower() == 'phone'}
-    df = pd.read_csv(path, dtype=dtype_dict)
-
-    return df
-
-
-@task
 def E_load_file_from_csv_by_dict(read_setting: dict) -> pd.DataFrame:
+    """
+    提供"read_setting"讀檔設定dict，抓取其中的"folder"和"file_name"
+    資料，自動讀取csv檔案並轉成dataframe。
+    """
+
     folder = Path(read_setting["folder"])
     file_name = read_setting["file_name"]
     path = folder / file_name
@@ -82,20 +98,31 @@ def E_load_file_from_csv_by_dict(read_setting: dict) -> pd.DataFrame:
     return df
 
 
-# @task
-# def L_save_to_sql(df: pd.DataFrame, table_name: str, save_mod: str) -> tuple[bool, str]:
-#     conn = create_pymysql_connect()
-#     try:
-#         df.to_sql(name=table_name,
-#                   con=engine, index=False, if_exists=save_mod)
-#         print(f"{table_name}已輸入資料庫成功！")
+@task
+def E_load_file_from_csv(folder: str, file_name: str) -> pd.DataFrame:
+    """
+    提供folder路徑和file_name檔案名稱，自動讀取csv檔案並轉成dataframe。
+    """
 
-#     except Exception as e:
-#         print({f"{table_name}輸入資料庫失敗：{e}"})
+    folder = Path(folder)
+    path = folder / file_name
+    cols = pd.read_csv(path, nrows=0).columns
+
+    dtype_dict = {col: str for col in cols if col.lower() == 'phone'}
+    df = pd.read_csv(path, dtype=dtype_dict)
+
+    return df
 
 
 @task
 def E_load_from_sql(table_name: str) -> pd.DataFrame:
+    """
+    輸入欲查詢的表名table_name，透過pymysql連線資料庫，
+    並取得該表後將其轉成dataframe。
+
+    連線所需資訊請寫入.env中，請勿寫入程式中。
+    """
+
     conn = create_pymysql_connect()
     sql = f"SELECT * FROM {table_name}"
 

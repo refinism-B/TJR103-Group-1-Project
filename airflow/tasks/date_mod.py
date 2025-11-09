@@ -11,7 +11,7 @@ from collections.abc import Iterable
 """
 
 
-def count_hours(time_str: str):
+def count_hours(time_str: str) -> float:
     """根據時間字串計算小時（字串格式為「xx:xx - xx:xx」）"""
     step2 = time_str.replace("–", "-")
     step3 = step2.split("-")
@@ -29,7 +29,8 @@ def count_hours(time_str: str):
     return hours
 
 
-def float_or_int_converter(op_time):
+def float_or_int_converter(op_time: int | float) -> int | float:
+    """當營業時間輸入為浮點數或整數時的處理"""
     if np.isnan(op_time) or op_time < 0:
         return 0
     if op_time > 0:
@@ -38,7 +39,8 @@ def float_or_int_converter(op_time):
         return 0
 
 
-def str_converter(op_time):
+def str_converter(op_time: str) -> bool:
+    """當營業時間輸入為字串時，判斷是否為空值"""
     na_words = ["nan", "na", "null", "none", ]
 
     if op_time == "0" or op_time == "":
@@ -50,7 +52,8 @@ def str_converter(op_time):
     return True
 
 
-def list_converter(op_time):
+def list_converter(op_time: Iterable) -> float:
+    """當營業時間輸入為可迭代物件時的處理"""
     if isinstance(op_time, str):
         op_time = ast.literal_eval(op_time)
     if not isinstance(op_time, Iterable):
@@ -87,9 +90,15 @@ def list_converter(op_time):
     return op_hours
 
 
-def trans_op_time_to_hours(op_time):
-    """輸入營業時間list，會逐日計算營業時間並加總後回傳
-    僅適用google map營業時間格式"""
+def trans_op_time_to_hours(op_time: Iterable) -> int | float:
+    """
+    輸入自gmap上爬取下來的營業時間資料，
+    並自動轉換成營業「時數」。
+    由於檔案來源不同，
+    原始資料為list，若存檔後讀取則轉成str，
+    函式將自動判斷資料型別並做出相應的處理。
+    """
+
     is_iterable = isinstance(
         op_time, Iterable) and not isinstance(op_time, str)
 

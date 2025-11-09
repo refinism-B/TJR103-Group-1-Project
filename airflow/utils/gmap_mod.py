@@ -1,11 +1,11 @@
-from datetime import datetime
-import time
 import math
+import time
+from datetime import datetime
+from typing import Optional
 
 import googlemaps
-from bs4 import BeautifulSoup
 from airflow.decorators import task
-
+from bs4 import BeautifulSoup
 
 """
 這個模組主要用於google map（以下簡稱gmap）套件爬取資料。
@@ -37,7 +37,7 @@ gmap套件基本用法：
 """
 
 
-def get_key(api_key_path):
+def get_key(api_key_path: str) -> str:
     """提供key檔案路徑，自動讀取內容並回傳"""
     with open(api_key_path, "r", encoding="UTF-8") as f:
         api_key = f.read()
@@ -45,7 +45,7 @@ def get_key(api_key_path):
     return api_key
 
 
-def trans_unix_to_date(timestamp):
+def trans_unix_to_date(timestamp: datetime.fromtimestamp) -> str:
     """將UNIX電腦時間轉換為西元年月日"""
     # 將時間戳轉成 datetime 物件
     dt = datetime.fromtimestamp(timestamp)
@@ -56,7 +56,7 @@ def trans_unix_to_date(timestamp):
     return date_str
 
 
-def newest_review_date(review_list: list):
+def newest_review_date(review_list: list) -> str:
     """提供gmaps回傳的評論列表，回傳列表中最新的評論時間"""
     for i in review_list:
         time = 0
@@ -67,9 +67,12 @@ def newest_review_date(review_list: list):
     return date
 
 
-def gmap_search(api_key, place_id=None, keyword=None):
-    """簡單的gmap搜尋，根據提供place id或keyword，回傳相應的結果。
-    回傳內容為未經處理的原始資訊"""
+def gmap_search(api_key: str, place_id: Optional[str] = None, keyword: Optional[str] = None) -> dict:
+    """
+    簡單的gmap搜尋，根據提供place id或keyword，回傳相應的結果。
+    回傳內容為未經處理的原始資訊。
+    """
+
     gmaps = googlemaps.Client(key=api_key)
 
     if place_id is not None:
@@ -82,7 +85,7 @@ def gmap_search(api_key, place_id=None, keyword=None):
         raise TypeError("請輸入 Place ID 或 keyword")
 
 
-def get_place_id(api_key: str, keyword: str):
+def get_place_id(api_key: str, keyword: str) -> str:
     """提供關鍵字（最好是店名+地址），透過gmap搜尋取得搜尋結果的第一個place_id"""
     gmaps = googlemaps.Client(key=api_key)
     search_result = gmaps.places(query=keyword, language="zh-TW")
@@ -93,7 +96,8 @@ def get_place_id(api_key: str, keyword: str):
         return None
 
 
-def empty_object(ori_name, place_id=None):
+def empty_object(ori_name: str, place_id: Optional[str] = None) -> dict:
+    """當查無資料時，提供空的店家資訊dict"""
     return {
         "name": ori_name,
         "place_id": place_id,
@@ -112,7 +116,7 @@ def empty_object(ori_name, place_id=None):
     }
 
 
-def place_id_na_or_not(place_id):
+def place_id_na_or_not(place_id: str) -> bool:
     na_list = {None, "", "nan", "null", "na"}
     if place_id is None:
         return False
@@ -123,7 +127,7 @@ def place_id_na_or_not(place_id):
     return True
 
 
-def gmap_info(ori_name, api_key, place_id=None):
+def gmap_info(ori_name: str, api_key: str, place_id: Optional[str] = None) -> dict:
     """提供place_id，回傳名稱、營業狀態、營業時間、gmap評分、經緯度、gmap網址、最新評論日期"""
 
     if place_id_na_or_not(place_id):
@@ -202,15 +206,21 @@ def gmap_info(ori_name, api_key, place_id=None):
 
 
 def get_place_dict(
-    name=None,
-    address=None,
-    keyword=None,
-    api_key_path=None,
-    api_key=None,
-    place_id=None,
-):
-    """輸入：key or key.txt 檔案路徑；名稱和地址or關鍵字or place_id。
-    會自動回傳地標資訊的字典"""
+    name: Optional[str] = None,
+    address: Optional[str] = None,
+    keyword: Optional[str] = None,
+    api_key_path: Optional[str] = None,
+    api_key: Optional[str] = None,
+    place_id: Optional[str] = None,
+) -> dict:
+    """
+    可輸入：
+    1.（必填）"key"或"帶key的檔案路徑"。有key才能使用gmap搜尋服務。
+    2.下列三種方式擇一：
+        「名稱+地址」自動組合成關鍵字搜尋，並回傳第一個結果的地標資訊。
+        「關鍵字」直接輸入關鍵字並搜尋，回傳第一個結果的地標資訊。
+        「地標的place id」回傳唯一的地標資訊。
+    """
 
     # 先確認key有輸入，有key才能使用服務
     if api_key_path is not None:
@@ -241,8 +251,14 @@ def get_place_dict(
     return place_dict
 
 
-def gmap_nearby_search(key, lat, lon, radius, keyword):
-    """提供api_key、經緯度、搜尋半徑和關鍵字，回傳搜尋結果的列表，資訊包括名稱、place_id和營業狀態"""
+def gmap_nearby_search(key: str, lat: float, lon: float, radius: int, keyword: str) -> list[dict]:
+    """
+    使用gmap地理搜尋功能：設定中心點（經緯度）並搜尋半徑內符合關鍵字的地標。
+    需提供：api key、經度、緯度、搜尋半徑、關鍵字等資訊。
+
+    注意：半徑搜尋每次提供單頁20筆、上限3頁的資料數，請設定適合的搜尋半徑。
+    """
+
     # 使用gmap連線並搜尋，取得搜尋結果
     gmaps = googlemaps.Client(key=key)
     search_result = gmaps.places_nearby(

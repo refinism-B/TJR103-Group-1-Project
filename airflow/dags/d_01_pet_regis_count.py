@@ -135,7 +135,7 @@ def d_01_pet_regis_count():
 
     @task
     def L_complete_save_file(df: pd.DataFrame):
-        file_date = date.today().strftime("%Y%m%d")
+        file_date = date.today().strftime("%Y-%m-%d")
         folder = Path(f"/opt/airflow/data/complete/registrue/dt={file_date}")
         folder.mkdir(parents=True, exist_ok=True)
 
