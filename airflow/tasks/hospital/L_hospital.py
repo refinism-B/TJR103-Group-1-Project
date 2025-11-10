@@ -39,7 +39,7 @@ def main():
         cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
         cursor.execute("TRUNCATE TABLE hospital;")
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
-        
+
         for _, row in df.iterrows():
             sql = """
             INSERT INTO hospital(

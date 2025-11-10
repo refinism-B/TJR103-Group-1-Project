@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.python import PythonOperator
 from tasks.hospital import (
     E_hospital,
@@ -13,6 +13,8 @@ from tasks.hospital import (
     T_hospital_place_id,
     T_hospital_sql,
 )
+
+from airflow import DAG
 
 # -------------------------------------
 # ✨ Step 1. DAG 參數設定
@@ -75,5 +77,7 @@ with DAG(
         >> t_merge
         >> t_cat_id
         >> t_sql
+        >> load
+    )
         >> load
     )

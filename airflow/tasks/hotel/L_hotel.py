@@ -37,7 +37,7 @@ def main():
         count = 0  # 計算幾筆資料
 
         cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-        cursor.execute("TRUNCATE TABLE hospital;")
+        cursor.execute("TRUNCATE TABLE hotel;")
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
 
         for _, row in df.iterrows():
