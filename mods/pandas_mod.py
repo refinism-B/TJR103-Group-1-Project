@@ -59,3 +59,9 @@ def reassign_id(df, id_col_name, id_str):
     df.loc[empty_id, id_col_name] = new_id
 
     return df
+
+
+def combine_dataframe(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+    df_combine = pd.concat([df1, df2], ignore_index=True)
+
+    return df_combine
