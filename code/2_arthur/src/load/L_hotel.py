@@ -1,16 +1,18 @@
-import pymysql
 import os
+
+import pymysql
 from colorama import Fore
-from mods import readdata as rd
+from dotenv import load_dotenv
+
 from mods import connectDB as conn_db
 from mods import extractdata as ed
-from dotenv import load_dotenv
+from mods import readdata as rd
 
 # 載入.env檔案
 load_dotenv()
 
 # csv檔路徑
-df = rd.get_csv_data("data/processed/hotel_data_final.csv")
+df = rd.get_csv_data("data/complete/hotel/hotel_data_final.csv")
 
 # csv讀取後手機格式會跑掉，透過函式做轉換
 df = ed.to_phone(df)
@@ -34,13 +36,12 @@ try:
     count = 0  # 計算幾筆資料
     for _, row in df.iterrows():
         sql = """
-        INSERT INTO Hotel (
-            hotel_id, place_id, name, address, phone, city, district, loc_id, business_status, op_hours, cat_id, types, rating, rating_total, longitude, latitude, map_url, website, newest_review
+        INSERT INTO hotel(
+            id, name, buss_status, loc_id, address, phone, op_hours, category_id, rating, rating_total, newest_review, longitude, latitude, map_url, website, place_id
         )
         VALUES (
             %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s
+            %s, %s, %s, %s, %s, %s, %s, %s
         );
         """
         count += cursor.execute(sql, tuple(row))  # pymysql以tuple傳送資料

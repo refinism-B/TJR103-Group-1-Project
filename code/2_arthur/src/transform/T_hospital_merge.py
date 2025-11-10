@@ -13,8 +13,8 @@ user = os.getenv("MYSQL_USERNAME")
 password = os.getenv("MYSQL_PASSWORD")
 db = os.getenv("MYSQL_DB_NAME")
 
-raw_path = "data/processed/hospital_data_id.csv"
-processed_path = "data/processed/hospital_data_merged.csv"
+raw_path = "data/processed/hospital/hospital_data_id.csv"
+processed_path = "data/processed/hospital/hospital_data_merged.csv"
 
 if __name__ == "__main__":
     # 讀取原始檔案

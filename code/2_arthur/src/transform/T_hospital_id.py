@@ -4,8 +4,8 @@ from mods import readdata as rd
 
 id_sign = "hp"
 
-raw_path = "data/processed/hospital_data_cleaned.csv"
-processed_path = "data/processed/hospital_data_id.csv"
+raw_path = "data/processed/hospital/hospital_data_cleaned.csv"
+processed_path = "data/processed/hospital/hospital_data_id.csv"
 
 if __name__ == "__main__":
     # 讀取原始檔案

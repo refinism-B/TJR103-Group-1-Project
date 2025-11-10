@@ -2,8 +2,8 @@ from mods import extractdata as ed
 from mods import readdata as rd
 
 
-raw_path = "data/processed/hotel_data_cat_id.csv"
-processed_path = "data/processed/hotel_data_final.csv"
+raw_path = "data/processed/hotel/hotel_data_cat_id.csv"
+processed_path = "data/complete/hotel/hotel_data_final.csv"
 
 if __name__ == "__main__":
     # 讀取原始檔案
