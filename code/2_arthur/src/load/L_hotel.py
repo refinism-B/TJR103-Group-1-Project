@@ -1,10 +1,12 @@
-import pymysql
 import os
+
+import pymysql
 from colorama import Fore
-from mods import readdata as rd
+from dotenv import load_dotenv
+
 from mods import connectDB as conn_db
 from mods import extractdata as ed
-from dotenv import load_dotenv
+from mods import readdata as rd
 
 # 載入.env檔案
 load_dotenv()
@@ -34,7 +36,7 @@ try:
     count = 0  # 計算幾筆資料
     for _, row in df.iterrows():
         sql = """
-        INSERT INTO hotel_new (
+        INSERT INTO hotel(
             id, name, buss_status, loc_id, address, phone, op_hours, category_id, rating, rating_total, newest_review, longitude, latitude, map_url, website, place_id
         )
         VALUES (
