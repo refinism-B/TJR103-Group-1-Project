@@ -1,24 +1,37 @@
-import sys, os, requests, pandas as pd
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-sys.path.append(ROOT_DIR)
-
-from mods import gmap as gm
+import os
+import requests
+import pandas as pd
+import urllib3
 from dotenv import load_dotenv
-from config import API_KEY, API_LINK
 
-def get_api_json(url):
-    res = requests.get(url, verify=False, timeout=15)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# === 初始化 ===
+load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
+API_LINK = "https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=2thVboChxuKs"
+
+# === 路徑設定 ===
+RAW_DIR = os.path.join(os.getcwd(), "data", "raw", "shelter")
+os.makedirs(RAW_DIR, exist_ok=True)
+RAW_PATH = os.path.join(RAW_DIR, "shelter_raw.csv")
+
+def fetch_raw_data():
+    print("🐾 正在從農業部 API 抓取資料...")
+    res = requests.get(API_LINK, verify=False, timeout=15)
     res.raise_for_status()
-    return res.json()
+    data = res.json()
 
-def extract_shelter_data():
-    """從農業部 API 取得收容所基本資料"""
-    data = get_api_json(API_LINK)
     df = pd.DataFrame(data)
-    df = df[["ShelterName", "CityName", "Address", "Phone"]].rename(columns={
-        "ShelterName": "收容所名稱",
-        "CityName": "縣市",
-        "Address": "地址",
-        "Phone": "電話",
-    })
+    print(f"📋 共取得 {len(df)} 筆全台收容所資料")
+
+    df = df[["ShelterName", "CityName", "Address", "Phone"]].copy()
+    df.rename(columns={
+        "ShelterName": "name",
+        "CityName": "city",
+        "Address": "address",
+        "Phone": "phone"
+    }, inplace=True)
+
+    df.to_csv(RAW_PATH, index=False, encoding="utf-8-sig")
+    print(f"📦 已儲存原始資料至：{RAW_PATH}")
     return df

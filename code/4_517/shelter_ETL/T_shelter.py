@@ -1,72 +1,137 @@
-import sys, os, re, pandas as pd
+import os
+import re
+import requests
+import pandas as pd
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+import urllib3
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-sys.path.append(ROOT_DIR)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
 
-from mods import gmap as gm
-from config import API_KEY
+# === API 設定 ===
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or "請填入你的Google API金鑰"
+GOOGLE_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+GOOGLE_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
 
-def clean_address(address):
-    if pd.isna(address):
-        return address
-    address = re.sub(r"^\d{3,5}", "", address)
-    address = re.sub(r"[\(（][^\)）]*[\)）]", "", address)
-    return address.strip()
+# === 檔案設定 ===
+PROCESSED_DIR = os.path.join(os.getcwd(), "data", "processed", "shelter")
+os.makedirs(PROCESSED_DIR, exist_ok=True)
+PROCESSED_PATH = os.path.join(PROCESSED_DIR, "shelter_processed.csv")
 
-def parse_opening_hours(opening_hours_list):
-    if not opening_hours_list:
+
+# === 取得 Google Place 資訊 ===
+def get_google_info(name, address):
+    try:
+        params = {"query": f"{name} {address}", "key": GOOGLE_API_KEY, "language": "zh-TW"}
+        search = requests.get(GOOGLE_SEARCH_URL, params=params, timeout=10)
+        data = search.json()
+        if not data.get("results"):
+            return None
+
+        result = data["results"][0]
+        place_id = result.get("place_id")
+
+        # 呼叫 Place Details API
+        details_params = {
+            "place_id": place_id,
+            "fields": "rating,user_ratings_total,opening_hours,url,website,business_status,geometry",
+            "language": "zh-TW",
+            "key": GOOGLE_API_KEY
+        }
+        details = requests.get(GOOGLE_DETAILS_URL, params=details_params, timeout=10).json().get("result", {})
+
+        # 營業時間轉換
+        opening_hours = None
+        if details.get("opening_hours") and "weekday_text" in details["opening_hours"]:
+            opening_hours = "; ".join(details["opening_hours"]["weekday_text"])
+
+        return {
+            "buss_status": details.get("business_status", "OPERATIONAL"),
+            "rating": details.get("rating"),
+            "rating_total": details.get("user_ratings_total"),
+            "opening_hours": opening_hours,
+            "longitude": details.get("geometry", {}).get("location", {}).get("lng"),
+            "latitude": details.get("geometry", {}).get("location", {}).get("lat"),
+            "map_url": details.get("url"),
+            "website": details.get("website", ""),
+            "place_id": place_id
+        }
+    except Exception:
         return None
-    text = "; ".join(opening_hours_list) if isinstance(opening_hours_list, list) else str(opening_hours_list)
-    total_hours = 0
-    for day_info in text.split("; "):
+
+
+# === 每週營業時數計算 ===
+def parse_opening_hours(opening_hours_str):
+    if not opening_hours_str or pd.isna(opening_hours_str):
+        return None
+    total_hours = 0.0
+    for day_info in opening_hours_str.split("; "):
         try:
-            if ":" not in day_info:
+            parts = day_info.split(": ")
+            if len(parts) != 2:
                 continue
-            _, time_part = day_info.split(": ", 1)
+            time_part = parts[1]
             if any(kw in time_part for kw in ["休息", "未營業", "公休", "不營業"]):
                 continue
-            for time_range in [r.strip() for r in time_part.split(",") if "–" in r]:
-                start, end = [datetime.strptime(t.strip(), "%H:%M") for t in time_range.split("–")]
+            time_ranges = [r.strip() for r in time_part.split(",") if "–" in r]
+            for time_range in time_ranges:
+                start_str, end_str = [t.strip() for t in time_range.split("–")]
+                start = datetime.strptime(start_str, "%H:%M")
+                end = datetime.strptime(end_str, "%H:%M")
                 if end < start:
                     end = end.replace(day=start.day + 1)
                 total_hours += (end - start).seconds / 3600
-        except:
+        except Exception:
             continue
     return round(total_hours, 2)
 
-def enrich_with_google_info(row):
-    """查詢 Google Maps 地標資訊"""
-    name, addr = row["收容所名稱"], row["地址"]
-    try:
-        place = gm.get_place_dict(name=name, address=addr, api_key=API_KEY)
-        if not place:
-            print(f"⚠️ 找不到 {name} 的 Google 資料")
-            return {k: None for k in ["Google 評分","評分人數","營業時間","Place ID","經度","緯度","營業狀態","最新評論日期","GMap 網址"]}
-        print(f"✅ {name} → {place.get('rating')}⭐ ({place.get('rating_total')} 則)")
-        return {
-            "Google 評分": place.get("rating"),
-            "評分人數": place.get("rating_total"),
-            "營業時間": "; ".join(place["opening_hours"]) if place["opening_hours"] else None,
-            "Place ID": place.get("place_id"),
-            "經度": place.get("longitude"),
-            "緯度": place.get("latitude"),
-            "營業狀態": place.get("business_status"),
-            "最新評論日期": place.get("newest_review"),
-            "GMap 網址": place.get("map_url"),
-        }
-    except Exception as e:
-        print(f"⚠️ 查詢失敗：{name} ({addr}) - {e}")
-        return {k: None for k in ["Google 評分","評分人數","營業時間","Place ID","經度","緯度","營業狀態","最新評論日期","GMap 網址"]}
 
-def transform_shelter_data(df):
-    df["地址"] = df["地址"].apply(clean_address)
-    print("🔍 查詢 Google Maps 評分與營業時間（多執行緒）...")
-    with ThreadPoolExecutor(max_workers=6) as executor:
-        futures = {executor.submit(enrich_with_google_info, row): idx for idx, row in df.iterrows()}
-        results = {idx: f.result() for f, idx in zip(as_completed(futures), futures.values())}
-    enriched = pd.DataFrame.from_dict(results, orient="index")
-    df = pd.concat([df, enriched], axis=1)
-    df["每週營業時數"] = df["營業時間"].apply(parse_opening_hours)
+# === 地址清理 ===
+def clean_address(address):
+    if pd.isna(address):
+        return address
+    addr = re.sub(r"^\d{3,5}", "", str(address))
+    addr = re.sub(r"[\(（][^\)）]*[\)）]", "", addr)
+    return addr.strip()
+
+
+# === 主轉換邏輯 ===
+def transform(df):
+    print("⚙️ 開始資料轉換與清理...")
+
+    df["address"] = df["address"].apply(clean_address)
+
+    # Google Maps 多執行緒查詢
+    print("🌍 正在查詢 Google Maps 詳細資料...")
+    results = {}
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(get_google_info, row["name"], row["address"]): idx for idx, row in df.iterrows()}
+        for future in as_completed(futures):
+            idx = futures[future]
+            results[idx] = future.result() or {}
+
+    gdf = pd.DataFrame.from_dict(results, orient="index")
+    df = pd.concat([df, gdf], axis=1)
+
+    # 每週營業時數
+    df["op_hours"] = df["opening_hours"].apply(parse_opening_hours)
+
+    # 基本欄位補齊
+    df["id"] = [f"sh{str(i+1).zfill(4)}" for i in range(len(df))]
+    df["category_id"] = 6
+    df["update_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 欄位順序
+    df = df[[
+        "id", "name", "buss_status", "address", "phone",
+        "op_hours", "category_id", "rating", "rating_total",
+        "opening_hours", "longitude", "latitude", "map_url",
+        "website", "place_id", "update_time"
+    ]]
+
+    df.to_csv(PROCESSED_PATH, index=False, encoding="utf-8-sig")
+    print(f"📊 已輸出：{PROCESSED_PATH}")
     return df
