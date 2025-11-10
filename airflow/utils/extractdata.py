@@ -64,6 +64,7 @@ def gdata_place_id(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFra
     # ------------------------------------------------------------
     # 取得 place_id
     # ------------------------------------------------------------
+    print(api_key)
     place_ids = []
     for _, row in df.iterrows():
         query = f"{row['name']} {row['address']}"
@@ -210,8 +211,8 @@ def merge_loc(
     # 連線DB
     conn, cursor = connDB.connect_db(host, port, user, password, db)
     df_loc = connDB.get_loc_table(conn, cursor)
-    cursor.close()
-    conn.close()
+    # cursor.close()
+    # conn.close()
     print(Fore.GREEN + "✅ Cursor and connection have been closed.")
 
     # ------------------------------------------------------------

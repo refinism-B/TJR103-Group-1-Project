@@ -77,5 +77,3 @@ with DAG(
         >> t_sql
         >> load
     )
-        >> load
-    )
