@@ -22,14 +22,14 @@ default_args = {
 
 
 @dag(
-    dag_id="d_03-3_gmap_info_search_supplies_test",
+    dag_id="d_01-7_gmap_info_search_supplies_test",
     default_args=default_args,
     description="[每月更新][寵物用品]根據place id資料爬取店家詳細資料",
     schedule_interval="0 */2 * * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "supplies", "test_done"]
+    tags=["bevis", "monthly", "supplies", "google_API"]
 )
 def d_03_3_gmap_info_search_supplies():
 

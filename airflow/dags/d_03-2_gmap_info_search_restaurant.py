@@ -22,14 +22,14 @@ default_args = {
 
 
 @dag(
-    dag_id="d_03-2_gmap_info_search_restaurant",
+    dag_id="d_01-6_gmap_info_search_restaurant",
     default_args=default_args,
     description="[每月更新][寵物餐廳]根據place id資料爬取店家詳細資料",
     schedule_interval="0 */2 * * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "restaurant", "test_done"]
+    tags=["bevis", "monthly", "restaurant", "google_API"]
 )
 def d_03_2_gmap_info_search_restaurant():
 

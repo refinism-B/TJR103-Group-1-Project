@@ -24,14 +24,14 @@ default_args = {
 
 
 @dag(
-    dag_id="d_01_pet_regis_count_daily",
+    dag_id="d_01-1_pet_regis_count_daily",
     default_args=default_args,
     description="[每日更新]爬取每日寵物登記數",
     schedule_interval="0 */1 * * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "daily", "test_done"]
+    tags=["bevis", "daily", "registration"]
 )
 def d_01_pet_regis_count():
     @task
