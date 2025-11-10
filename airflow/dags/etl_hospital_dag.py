@@ -31,13 +31,13 @@ default_args = {
 # ✨ Step 2. 建立 DAG
 # -------------------------------------
 with DAG(
-    dag_id="etl_hospital_dag",
+    dag_id="d_02-2_etl_hospital_dag",
     description="Hospital ETL pipeline (single-task wrapper)",
     schedule_interval="@monthly",  # 每月執行
     start_date=datetime.now(),
     catchup=False,
     default_args=default_args,
-    tags=["hospital", "etl"],
+    tags=["hospital", "etl", "arthur", "monthly", "google_API"],
 ) as dag:
 
     # -------------------------------------

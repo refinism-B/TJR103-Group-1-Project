@@ -31,13 +31,13 @@ default_args = {
 # ✨ Step 2. 建立 DAG
 # -------------------------------------
 with DAG(
-    dag_id="etl_hotel_dag",
+    dag_id="d_02-1_etl_hotel_dag",
     description="Hotel ETL pipeline (single-task wrapper)",
     schedule_interval="@monthly",  # 每月執行
     start_date=datetime.now(),
     catchup=False,
     default_args=default_args,
-    tags=["hotel", "etl"],
+    tags=["hotel", "etl", "arthur", "monthly", "google_API"],
 ) as dag:
 
     # -------------------------------------
