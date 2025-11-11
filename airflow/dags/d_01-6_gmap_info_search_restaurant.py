@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from tasks import database_file_mod as dfm
 from tasks import pandas_mod as pdm
+from tasks import GCS_mod as gcs
 from tasks.pipeline import gmap_info_search as gis
 from utils.config import (ADDRESS_DROP_KEYWORDS,
                           GMAP_INFO_SEARCH_FINAL_COLUMNS, STORE_DROP_KEY_WORDS,
@@ -138,6 +139,16 @@ def d_03_2_gmap_info_search_restaurant():
     # 存檔至地端
     dfm.L_save_file_to_csv_by_dict(
         save_setting=finish_save_setting, df=df_main)
+
+    # 取得上傳GCS設定檔
+    """
+    目前設定路徑為test_data，正式時請改成正式路徑
+    """
+    gcs_setting = gis.S_get_gcs_setting(
+        keyword_dict=keyword_dict, local_save_setting=finish_save_setting)
+
+    # 上傳至GCS
+    gcs.L_upload_to_gcs(gcs_setting=gcs_setting)
 
     # 查看完成後的資料筆數
     finish_data_total = pdm.S_count_data(df_main)

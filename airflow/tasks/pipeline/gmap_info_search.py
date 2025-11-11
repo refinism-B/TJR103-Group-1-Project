@@ -290,6 +290,25 @@ def S_get_finish_save_setting(keyword_dict: dict) -> dict:
 
 
 @task
+def S_get_gcs_setting(keyword_dict: dict, local_save_setting: dict) -> dict:
+    """取得上傳GCS的設定資訊"""
+    folder = Path(local_save_setting["folder"])
+    file_name = local_save_setting["file_name"]
+    path = folder / file_name
+    keyword = keyword_dict['file_name']
+
+    bucket_name = "tjr103-1-project-bucket"
+    destination = f"test_data/complete/store/type={keyword}/store.csv"
+    source_file_name = path
+
+    return {
+        "bucket_name": bucket_name,
+        "destination": destination,
+        "source_file_name": source_file_name
+    }
+
+
+@task
 def S_print_result(ori_count: int, finish_count: int):
     """將資料清理前後的筆數相比，顯示清理的結果如何"""
     clean_count = ori_count - finish_count

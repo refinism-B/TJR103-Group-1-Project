@@ -9,6 +9,7 @@ from airflow.decorators import dag, task
 from tasks import database_file_mod as dfm
 from tasks import pandas_mod as pdm
 from utils import config as cfg
+from tasks import GCS_mod as gcs
 
 
 # 設定DAG基本資訊
@@ -139,7 +140,7 @@ def d_01_pet_regis_count():
         folder = Path(f"/opt/airflow/data/complete/registrue/dt={file_date}")
         folder.mkdir(parents=True, exist_ok=True)
 
-        file_name = "daily_regis.csv"
+        file_name = "registration.csv"
         path = folder / file_name
         try:
             df.to_csv(path, index=False, encoding="utf-8-sig")
@@ -147,6 +148,19 @@ def d_01_pet_regis_count():
 
         except Exception as e:
             print(f"{file_date}資料存檔失敗：{e}")
+
+    @task
+    def S_get_gcs_setting():
+        file_date = date.today().strftime("%Y-%m-%d")
+        bucket_name = "tjr103-1-project-bucket"
+        destination = f"tjr103-1-project-bucket/data/complete/registration/dt={file_date}/registration.csv"
+        source_file_name = f"/opt/airflow/data/complete/registrue/dt={file_date}/registration.csv"
+
+        return {
+            "bucket_name": bucket_name,
+            "destination": destination,
+            "source_file_name": source_file_name
+        }
 
     """程式正式開始"""
 
@@ -264,7 +278,12 @@ def d_01_pet_regis_count():
     L_complete_save_file(df=df_main)
 
     # 尚缺更新至資料庫（待補）
-    # 尚缺更新至GCS（待補）
+
+    # 取得GCS存檔設定
+    gcs_setting = S_get_gcs_setting()
+
+    # 上傳至GCS
+    gcs.L_upload_to_gcs(gcs_setting=gcs_setting)
 
 
 d_01_pet_regis_count()
