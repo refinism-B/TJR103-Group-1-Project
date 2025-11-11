@@ -7,13 +7,14 @@ from mods import extractdata as ed
 
 import ast
 import re
-import pandas as pd
+
 import numpy as np
-from utils import gmap as gm
-from utils import connectDB as connDB
-from utils import savedata as sd
-from utils import date_mod as dm
+import pandas as pd
 from colorama import Fore
+from utils import connectDB as connDB
+from utils import date_mod as dm
+from utils import gmap as gm
+from utils import savedata as sd
 
 
 def extract_city_district(address: str) -> tuple[str, str]:
@@ -287,6 +288,10 @@ def cat_id(
 
     # 原本的df創立一個cat_id並賦值
     df["cat_id"] = df_cat["category_id"].iloc[0]
+    
+    if category == "hospital":
+        # 判斷168小時醫院並將cat_id變成7
+        df.loc[df["opening_hours"] == 168, "cat_id"] = 7
 
     # 調整欄位
     columns = [
@@ -417,5 +422,7 @@ def to_sql_null(x):
     s = str(x).strip()
 
     if s.lower() in ("nan", "none", ""):
+        return None
+    return x
         return None
     return x
