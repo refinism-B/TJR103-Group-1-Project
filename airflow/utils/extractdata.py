@@ -424,5 +424,3 @@ def to_sql_null(x):
     if s.lower() in ("nan", "none", ""):
         return None
     return x
-        return None
-    return x
