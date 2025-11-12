@@ -23,7 +23,7 @@ def save_to_mysql(df):
     username = os.getenv("MYSQL_USERNAME")
     password = os.getenv("MYSQL_PASSWORD")
     target_ip = os.getenv("MYSQL_IP")
-    target_port = int(os.getenv("MYSQL_PORTT"))
+    target_port = int(os.getenv("MYSQL_PORT"))
     db_name = os.getenv("MYSQL_DB_NAME")
 
     try:
