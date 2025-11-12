@@ -67,3 +67,35 @@ def T_backup_file(backup_setting: dict):
             blob=blob, destination_bucket=bucket, new_name=new_path)
 
         print(f"已將{blob.name}複製至{new_path}")
+
+
+@task
+def L_upload_folder_to_gcs(folder_setting: dict) -> dict:
+    credential_path = os.getenv("GCS_KEY_PATH")
+    credentials = service_account.Credentials.from_service_account_file(
+        credential_path)
+
+    source_folder = folder_setting["source_folder"]
+    destination_folder = folder_setting["destination_folder"]
+    bucket_name = folder_setting["bucket_name"]
+
+    client = storage.Client(credentials=credentials)
+    bucket = client.bucket(bucket_name)
+
+    for root, dirs, files in os.walk(source_folder):
+        for file in files:
+            # 先拼湊地端完整路徑
+            local_path = os.path.join(root, file)
+
+            # 去掉輸入路徑（前半）的部分，僅保留後半的結構（要保留上傳的部分）
+            relative_path = os.path.relpath(local_path, source_folder)
+
+            # 拼湊出GCS的路徑
+            gcs_path = os.path.join(
+                destination_folder, relative_path).replace("\\", "/")
+
+            # 上傳至GCS
+            blob = bucket.blob(gcs_path)
+            blob.upload_from_filename(local_path)
+
+            print(f'已上傳{local_path}至{bucket_name}/{gcs_path}')
