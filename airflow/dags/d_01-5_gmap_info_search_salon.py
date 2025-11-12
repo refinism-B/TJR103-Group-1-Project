@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from tasks import database_file_mod as dfm
 from tasks import pandas_mod as pdm
+from tasks import GCS_mod as gcs
 from tasks.pipeline import gmap_info_search as gis
 from utils.config import (ADDRESS_DROP_KEYWORDS,
                           GMAP_INFO_SEARCH_FINAL_COLUMNS, STORE_DROP_KEY_WORDS,
@@ -25,13 +26,13 @@ default_args = {
     dag_id="d_01-5_gmap_info_search_salon",
     default_args=default_args,
     description="[每月更新][寵物美容]根據place id資料爬取店家詳細資料",
-    schedule_interval="0 */2 * * *",
+    schedule_interval="0 10 20 * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
     tags=["bevis", "monthly", "salon", "google_API"]
 )
-def d_03_1_gmap_info_search_salon():
+def d_01_5_gmap_info_search_salon():
 
     # 先定義要執行的商店類別
     # 0為寵物美容、1為寵物餐廳、2為寵物用品
@@ -139,6 +140,16 @@ def d_03_1_gmap_info_search_salon():
     dfm.L_save_file_to_csv_by_dict(
         save_setting=finish_save_setting, df=df_main)
 
+    # 取得上傳GCS設定檔
+    """
+    目前設定路徑為test_data，正式時請改成正式路徑
+    """
+    gcs_setting = gis.S_get_gcs_setting(
+        keyword_dict=keyword_dict, local_save_setting=finish_save_setting)
+
+    # 上傳至GCS
+    gcs.L_upload_to_gcs(gcs_setting=gcs_setting)
+
     # 查看完成後的資料筆數
     finish_data_total = pdm.S_count_data(df_main)
 
@@ -147,4 +158,4 @@ def d_03_1_gmap_info_search_salon():
                        finish_count=finish_data_total)
 
 
-d_03_1_gmap_info_search_salon()
+d_01_5_gmap_info_search_salon()

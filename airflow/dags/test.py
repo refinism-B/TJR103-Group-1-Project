@@ -88,6 +88,3 @@ def d_test():
 
     # 存檔至地端
     dfm.L_save_file_to_csv_by_dict(save_setting=main_save_setting, df=df_main)
-
-
-d_test()
