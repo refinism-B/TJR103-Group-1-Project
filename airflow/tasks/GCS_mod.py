@@ -3,7 +3,9 @@ import os
 from dotenv import load_dotenv
 from google.cloud import storage
 from google.oauth2 import service_account
+from airflow.decorators import task
 
+load_dotenv()
 
 """
 這個模組主要用於GCS的操作。
@@ -11,6 +13,7 @@ from google.oauth2 import service_account
 """
 
 
+@task
 def L_upload_to_gcs(gcs_setting: dict):
     """
     提供"gcs_setting"上傳設定檔，會自動抓取"bucket_name"、"destination"、
@@ -18,8 +21,6 @@ def L_upload_to_gcs(gcs_setting: dict):
 
     注意：請準備好GCS的json key檔案，並將路徑寫入.env。
     """
-
-    load_dotenv()
 
     credential_path = os.getenv("GCS_KEY_PATH")
     credentials = service_account.Credentials.from_service_account_file(
@@ -35,3 +36,23 @@ def L_upload_to_gcs(gcs_setting: dict):
     blob.upload_from_filename(source_file_name)
 
     print(f"{bucket_name}/{destination}上傳成功！")
+
+
+@task
+def T_backup_file(backup_setting: dict):
+    credential_path = os.getenv("GCS_KEY_PATH")
+    credentials = service_account.Credentials.from_service_account_file(
+        credential_path)
+
+    bucket_name = backup_setting["bucket_name"]
+    source_folder = backup_setting["source_folder"]
+    destination_folder = backup_setting["destination_folder"]
+
+    client = storage.Client(credentials=credentials)
+    bucket = client.bucket(bucket_name)
+    blob_list = bucket.list_blobs(prefix=source_folder)
+    for blob in blob_list:
+        new_path = blob.name.replace(source_folder, destination_folder, 1)
+        new_blob = bucket.copy_blob(
+            blob=blob, destination_bucket=bucket, new_name=new_path)
+        print(f"已將{blob.name}複製至{new_path}")

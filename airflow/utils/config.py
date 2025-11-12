@@ -30,8 +30,8 @@ PET_REGIS_COLUMNS_NAME = [
     "絕育除戶數",
     "免絕育數",
     "免絕育除戶數",
-    "animal",
     "date",
+    "animal",
     "city",
     "update_date"
 ]

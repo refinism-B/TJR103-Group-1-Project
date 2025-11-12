@@ -28,8 +28,8 @@ default_args = {
     dag_id="d_01-1_pet_regis_count_daily",
     default_args=default_args,
     description="[每日更新]爬取每日寵物登記數",
-    schedule_interval="0 */1 * * *",
-    start_date=datetime(2023, 1, 1),
+    schedule_interval="0 20 * * *",
+    start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
     tags=["bevis", "daily", "registration"]
@@ -153,7 +153,7 @@ def d_01_pet_regis_count():
     def S_get_gcs_setting():
         file_date = date.today().strftime("%Y-%m-%d")
         bucket_name = "tjr103-1-project-bucket"
-        destination = f"tjr103-1-project-bucket/data/complete/registration/dt={file_date}/registration.csv"
+        destination = f"data/complete/registration/dt={file_date}/registration.csv"
         source_file_name = f"/opt/airflow/data/complete/registrue/dt={file_date}/registration.csv"
 
         return {
@@ -275,15 +275,21 @@ def d_01_pet_regis_count():
         df=df_main, new_cols=cfg.PET_REGIS_FINAL_COLUMNS)
 
     # 存檔至地端
-    L_complete_save_file(df=df_main)
+    save = L_complete_save_file(df=df_main)
 
-    # 尚缺更新至資料庫（待補）
+    # 將更新資料輸入資料庫
+    sql = "INSERT INTO pet_regis (loc_id, date, animal, regis_count, removal_count, update_date)" \
+        "VALUES(%s, %s, %s, %s, %s, %s)"
+
+    dfm.L_upload_data_to_db(df=df_main, sql=sql)
 
     # 取得GCS存檔設定
     gcs_setting = S_get_gcs_setting()
 
     # 上傳至GCS
     gcs.L_upload_to_gcs(gcs_setting=gcs_setting)
+
+    save >> gcs_setting
 
 
 d_01_pet_regis_count()
