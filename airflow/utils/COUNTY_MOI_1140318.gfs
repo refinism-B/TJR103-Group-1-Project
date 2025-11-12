@@ -1,0 +1,34 @@
+<GMLFeatureClassList>
+  <GMLFeatureClass>
+    <Name>PUB_行政區域</Name>
+    <ElementPath>PUB_行政區域</ElementPath>
+    <GeometryName>涵蓋範圍</GeometryName>
+    <GeometryElementPath>涵蓋範圍</GeometryElementPath>
+    <!--MULTIPOLYGON-->
+    <GeometryType>6</GeometryType>
+    <DatasetSpecificInfo>
+      <FeatureCount>22</FeatureCount>
+      <ExtentXMin>114.35928</ExtentXMin>
+      <ExtentXMax>124.56116</ExtentXMax>
+      <ExtentYMin>10.37135</ExtentYMin>
+      <ExtentYMax>26.38528</ExtentYMax>
+    </DatasetSpecificInfo>
+    <PropertyDefn>
+      <Name>名稱</Name>
+      <ElementPath>名稱</ElementPath>
+      <Type>String</Type>
+      <Width>9</Width>
+    </PropertyDefn>
+    <PropertyDefn>
+      <Name>行政區域代碼</Name>
+      <ElementPath>行政區域代碼</ElementPath>
+      <Type>String</Type>
+      <Width>5</Width>
+    </PropertyDefn>
+    <PropertyDefn>
+      <Name>比例尺分母</Name>
+      <ElementPath>比例尺分母</ElementPath>
+      <Type>Integer</Type>
+    </PropertyDefn>
+  </GMLFeatureClass>
+</GMLFeatureClassList>

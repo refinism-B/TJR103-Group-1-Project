@@ -210,5 +210,9 @@ __marimo__/
 # data/*
 # !data/.gitkeep
 
+/airflow/utils/.env
+/airflow/data
 /.vscode/
 /.env
+
+command.md
