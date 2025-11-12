@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 a2wsgi ; python_version >= "3.11" and python_version < "3.14"
 aiosmtplib ; python_version >= "3.11" and python_version < "3.14"
 aiosqlite ; python_version >= "3.11" and python_version < "3.14"
@@ -232,3 +233,23 @@ wrapt ; python_version >= "3.11" and python_version < "3.14"
 wsproto ; python_version >= "3.11" and python_version < "3.14"
 xlrd ; python_version >= "3.11" and python_version < "3.14"
 zipp ; python_version >= "3.11" and python_version < "3.14"
+=======
+pandas
+requests
+bs4
+numpy
+google-cloud-storage
+pymysql
+pillow
+selenium
+googlemaps
+lxml
+python-dotenv
+xlrd
+sqlalchemy
+geopandas
+opencc-python-reimplemented
+apache-airflow
+mysqlclient
+
+>>>>>>> 517
