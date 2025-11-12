@@ -29,7 +29,7 @@ default_args = {
     # Optional: Add tags for better filtering in the UI
     tags=["bevis", "monthly", "salon", "google_API"]
 )
-def d_02_1_gmap_full_search_salon():
+def d_01_2_gmap_full_search_salon():
 
     # 爬取的商店類型，若要修改則在此變更。
     # 0為寵物美容，1為寵物餐廳，2為寵物用品
@@ -181,4 +181,4 @@ def d_02_1_gmap_full_search_salon():
     dfm.L_save_file_to_csv_by_dict(save_setting=main_save_setting, df=df_main)
 
 
-d_02_1_gmap_full_search_salon()
+d_01_2_gmap_full_search_salon()

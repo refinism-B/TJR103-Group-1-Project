@@ -40,6 +40,16 @@ def L_upload_to_gcs(gcs_setting: dict):
 
 @task
 def T_backup_file(backup_setting: dict):
+    """
+    主要功能是將GCS上的某一個資料夾中的所有資料夾及檔案，
+    複製備份到另一個位置中。
+
+    輸入的backup_setting需要是一個字典，
+    其中包含"bucket_name"、"source_folder"、"destination_folder"三項資訊
+    才能讓GCS操作檔案
+
+    注意：請準備好GCS的json key檔案，並將路徑寫入.env。
+    """
     credential_path = os.getenv("GCS_KEY_PATH")
     credentials = service_account.Credentials.from_service_account_file(
         credential_path)
@@ -55,4 +65,5 @@ def T_backup_file(backup_setting: dict):
         new_path = blob.name.replace(source_folder, destination_folder, 1)
         new_blob = bucket.copy_blob(
             blob=blob, destination_bucket=bucket, new_name=new_path)
+
         print(f"已將{blob.name}複製至{new_path}")

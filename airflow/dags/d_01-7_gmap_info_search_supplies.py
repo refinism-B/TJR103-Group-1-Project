@@ -32,7 +32,7 @@ default_args = {
     # Optional: Add tags for better filtering in the UI
     tags=["bevis", "monthly", "supplies", "google_API"]
 )
-def d_03_3_gmap_info_search_supplies():
+def d_01_7_gmap_info_search_supplies():
 
     # 先定義要執行的商店類別
     # 0為寵物美容、1為寵物餐廳、2為寵物用品
@@ -158,4 +158,4 @@ def d_03_3_gmap_info_search_supplies():
                        finish_count=finish_data_total)
 
 
-d_03_3_gmap_info_search_supplies()
+d_01_7_gmap_info_search_supplies()

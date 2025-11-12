@@ -34,9 +34,10 @@ default_args = {
     # Optional: Add tags for better filtering in the UI
     tags=["bevis", "daily", "registration"]
 )
-def d_01_pet_regis_count():
+def d_01_1_pet_regis_count_daily():
     @task
     def S_get_requests_data_dict(city_dict: dict, city_index: int) -> dict:
+        """設定request訪問時需要的資料"""
         city_list = list(city_dict.keys())
         city_code = city_list[city_index]
         city_name = city_dict[city_code]
@@ -60,6 +61,7 @@ def d_01_pet_regis_count():
 
     @task
     def S_create_post_data(dict_name: dict, ani: str) -> dict:
+        """建立post訪問時需要帶入的資料"""
         start_date = dict_name["start_date"]
         end_date = dict_name["end_date"]
         city = dict_name["city"]
@@ -76,6 +78,7 @@ def d_01_pet_regis_count():
         }
 
     def post_requests(url: str, headers: dict, data: dict) -> json:
+        """進行requests訪問並回傳取得的json檔案"""
         res = requests.post(url=url, headers=headers, data=data)
         res.raise_for_status()
         res.encoding = "utf-8-sig"
@@ -89,6 +92,7 @@ def d_01_pet_regis_count():
 
     @task(retries=3, retry_delay=timedelta(seconds=30))
     def E_get_main_data(data_dict: dict, data: dict) -> pd.DataFrame:
+        """將取得的json檔案轉換為dataframe"""
         data_json = post_requests(
             url=data_dict["url"], headers=data_dict["headers"], data=data)
         df = pd.DataFrame(data_json)
@@ -98,6 +102,7 @@ def d_01_pet_regis_count():
 
     @task
     def T_add_columns(df: pd.DataFrame, data_dict: dict, ani: str) -> pd.DataFrame:
+        """將dataframe加上日期、寵物類別、城市和更新日期欄位"""
         df["date"] = data_dict["start_date"]
         df["animal"] = ani
         df["city"] = data_dict["city"]
@@ -107,6 +112,7 @@ def d_01_pet_regis_count():
 
     @task
     def S_get_save_setting(dict_name: dict) -> dict:
+        """取得存檔資訊"""
         folder = dict_name["folder"]
         file_name = dict_name["file_name"]
 
@@ -114,18 +120,21 @@ def d_01_pet_regis_count():
 
     @task
     def T_trans_city_to_ch(df: pd.DataFrame, city_dict: dict) -> pd.DataFrame:
+        """將城市從代碼轉換成對應的中文"""
         df["city"] = df["city"].apply(lambda x: city_dict[x])
 
         return df
 
     @task
     def T_clean_district_value(df: pd.DataFrame) -> pd.DataFrame:
+        """將區的郵遞區號去除"""
         df["district"] = df["district"].apply(lambda x: x[3:])
 
         return df
 
     @task
     def T_df_merge_location(df_main: pd.DataFrame, df_loc: list[dict]) -> pd.DataFrame:
+        """與location表join取得loc id"""
         df_loc = pd.DataFrame(df_loc)
         df_loc = df_loc[["loc_id", "city", "district"]]
 
@@ -136,6 +145,7 @@ def d_01_pet_regis_count():
 
     @task
     def L_complete_save_file(df: pd.DataFrame):
+        """將完成爬取的檔案儲存至地端"""
         file_date = date.today().strftime("%Y-%m-%d")
         folder = Path(f"/opt/airflow/data/complete/registrue/dt={file_date}")
         folder.mkdir(parents=True, exist_ok=True)
@@ -151,6 +161,7 @@ def d_01_pet_regis_count():
 
     @task
     def S_get_gcs_setting():
+        """取得上傳至GCS所需的路徑資訊"""
         file_date = date.today().strftime("%Y-%m-%d")
         bucket_name = "tjr103-1-project-bucket"
         destination = f"data/complete/registration/dt={file_date}/registration.csv"
@@ -292,4 +303,4 @@ def d_01_pet_regis_count():
     save >> gcs_setting
 
 
-d_01_pet_regis_count()
+d_01_1_pet_regis_count_daily()
