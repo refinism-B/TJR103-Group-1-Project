@@ -134,3 +134,11 @@ ADDRESS_DROP_KEYWORDS = [
     "段",
     "道"
 ]
+
+
+# 爬取地區面積資料
+# 地區面積資料連結
+LOCATION_AREA_URL = "https://www.ris.gov.tw/info-popudata/app/awFastDownload/file/y0s6-00000.xls/y0s6/00000/"
+
+# 地區面積表的欄位
+LOCATION_AREA_COLUMNS = ["location", "population", "area", "density"]

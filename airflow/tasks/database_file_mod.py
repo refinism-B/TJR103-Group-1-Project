@@ -150,3 +150,28 @@ def L_upload_data_to_db(df: pd.DataFrame, sql: str):
     finally:
         cursor.close()
         conn.close()
+
+
+@task
+def L_truncate_and_upload_data_to_db(df: pd.DataFrame, sql: str, table_keyword: dict):
+    """將df中的資料輸入MySQL的table中，需提供SQL指令"""
+    table_name = table_keyword["file_name"]
+
+    conn = create_pymysql_connect()
+    cursor = conn.cursor()
+
+    data = list(df.itertuples(index=False, name=None))
+
+    try:
+        truncate_sql = f"TRUNCATE TABLE {table_name}"
+        cursor.execute(truncate_sql)
+
+        cursor.executemany(sql, data)
+        conn.commit()
+        print("資料寫入資料庫成功！")
+    except Exception as e:
+        print(f"資料寫入資料褲時發生錯誤：{e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
