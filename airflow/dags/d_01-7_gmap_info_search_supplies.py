@@ -26,7 +26,7 @@ default_args = {
     dag_id="d_01-7_gmap_info_search_supplies_test",
     default_args=default_args,
     description="[每月更新][寵物用品]根據place id資料爬取店家詳細資料",
-    schedule_interval="0 */2 * * *",
+    schedule_interval="0 10 20 * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
@@ -137,7 +137,7 @@ def d_01_7_gmap_info_search_supplies():
         keyword_dict=keyword_dict)
 
     # 存檔至地端
-    dfm.L_save_file_to_csv_by_dict(
+    save = dfm.L_save_file_to_csv_by_dict(
         save_setting=finish_save_setting, df=df_main)
 
     # 取得上傳GCS設定檔
@@ -156,6 +156,8 @@ def d_01_7_gmap_info_search_supplies():
     # 印出比較結果
     gis.S_print_result(ori_count=origin_data_total,
                        finish_count=finish_data_total)
+
+    save >> gcs_setting
 
 
 d_01_7_gmap_info_search_supplies()

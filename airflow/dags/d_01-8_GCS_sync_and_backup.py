@@ -19,7 +19,7 @@ default_args = {
     dag_id="d_01-8_GCS_sync_and_backup",
     default_args=default_args,
     description="[每日更新]備份GCS中的完成檔案",
-    schedule_interval="0 0 10 * *",
+    schedule_interval="0 20 25 * *",
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI

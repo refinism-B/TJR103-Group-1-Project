@@ -26,7 +26,7 @@ default_args = {
     dag_id="d_01-6_gmap_info_search_restaurant",
     default_args=default_args,
     description="[每月更新][寵物餐廳]根據place id資料爬取店家詳細資料",
-    schedule_interval="0 */2 * * *",
+    schedule_interval="0 10 20 * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI

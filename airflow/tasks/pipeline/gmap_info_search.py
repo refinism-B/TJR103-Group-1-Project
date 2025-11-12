@@ -294,7 +294,7 @@ def S_get_gcs_setting(keyword_dict: dict, local_save_setting: dict) -> dict:
     """取得上傳GCS的設定資訊"""
     folder = Path(local_save_setting["folder"])
     file_name = local_save_setting["file_name"]
-    path = folder / file_name
+    path = str(folder / file_name)
     keyword = keyword_dict['file_name']
 
     bucket_name = "tjr103-1-project-bucket"
