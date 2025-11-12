@@ -157,14 +157,20 @@ def transform(df):
 
     df["loc_id"] = df["address"].apply(get_loc_id)
     df["website"] = df.apply(lambda r: pick_official_website(r["name"], r["address"], r.get("website", "")), axis=1)
-    df["op_hours"] = df["opening_hours"].apply(parse_opening_hours)
+    if "opening_hours" in df.columns:
+        df["op_hours"] = df["opening_hours"].apply(parse_opening_hours)
+    else:
+        df["op_hours"] = None
 
     # === 🆕 只保留 newest_review 日期 ===
-    df["newest_review"] = df["newest_review"].apply(
-        lambda x: re.search(r"\d{4}-\d{2}-\d{2}", str(x)).group(0)
-        if re.search(r"\d{4}-\d{2}-\d{2}", str(x))
-        else None
-    )
+    if "newest_review" in df.columns:
+        df["newest_review"] = df["newest_review"].apply(
+            lambda x: re.sub(r"\s+", " ", x) if isinstance(x, str) else x
+        )
+    else:
+        df["newest_review"] = None
+
+    print("🏙️ 過濾六都資料並重新編號中...")
 
     # === 🔍 只保留六都資料 ===
     six_city_keywords = list(CITY_LOC_MAP.keys())
