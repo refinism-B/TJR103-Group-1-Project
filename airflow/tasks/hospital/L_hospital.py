@@ -13,7 +13,7 @@ def main():
     load_dotenv()
 
     # csv檔路徑
-    df = rd.get_csv_data("/opt/airflow/data/complete/hospital/hospital_data_final.csv")
+    df = rd.get_csv_data("/opt/airflow/data/data/complete/store/type=hospital/store.csv")
 
     # csv讀取後手機格式會跑掉，透過函式做轉換
     df = ed.to_phone(df)
