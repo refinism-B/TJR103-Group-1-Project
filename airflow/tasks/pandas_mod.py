@@ -173,6 +173,7 @@ def S_get_columns_str(df: pd.DataFrame) -> str:
 
 
 def S_get_columns_length_values(df: pd.DataFrame) -> str:
+    """計算欄位數，並產生等數的"%s"字串，只要用於sql指令"""
     column_count = len(df.columns)
     value_list = ["%s" for _ in range(column_count)]
     value_str = ", ".join(value_list)

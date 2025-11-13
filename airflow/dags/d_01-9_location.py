@@ -24,7 +24,7 @@ default_args = {
 @dag(
     dag_id="d_01-9_location",
     default_args=default_args,
-    description="[每日更新]爬取每日寵物登記數",
+    description="[每日更新]抓取地區資料，並與人口資料合併",
     schedule_interval="0 20 5 * *",
     start_date=datetime(2025, 1, 1),
     catchup=False,

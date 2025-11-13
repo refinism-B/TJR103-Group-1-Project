@@ -70,7 +70,15 @@ def T_backup_file(backup_setting: dict):
 
 
 @task
-def L_upload_folder_to_gcs(folder_setting: dict) -> dict:
+def L_upload_folder_to_gcs(folder_setting: dict):
+    """
+    將一個資料夾及其中的子資料夾和檔案都上傳至GCS，
+    上傳後會保持資料夾結構和檔案相對位置。
+    輸入的folder_setting為一個字典，
+    需包含"source_folder"、"destination_folder"、"bucket_name"三項資訊
+
+    注意：請準備好GCS的json key檔案，並將路徑寫入.env。
+    """
     credential_path = os.getenv("GCS_KEY_PATH")
     credentials = service_account.Credentials.from_service_account_file(
         credential_path)

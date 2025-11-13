@@ -136,7 +136,11 @@ def E_load_from_sql(table_name: str) -> pd.DataFrame:
 
 @task
 def L_upload_data_to_db(df: pd.DataFrame, sql: str):
-    """將df中的資料輸入MySQL的table中，需提供SQL指令"""
+    """
+    將df中的資料輸入MySQL的table中，
+    輸入的資料會直接append在table
+    需提供SQL指令
+    """
     conn = create_pymysql_connect()
     cursor = conn.cursor()
 
@@ -156,7 +160,10 @@ def L_upload_data_to_db(df: pd.DataFrame, sql: str):
 
 @task
 def L_truncate_and_upload_data_to_db(df: pd.DataFrame, table_keyword: Optional[dict] = None, table_name: Optional[str] = None):
-    """將df中的資料輸入MySQL的table中，需提供SQL指令"""
+    """
+    將df中的資料輸入MySQL的table中，
+    在輸入時會先將原本的表作truncate再重新輸入。
+    """
     if table_keyword:
         table_name = table_keyword["file_name"]
     elif table_name:
