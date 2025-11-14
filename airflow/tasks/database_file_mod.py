@@ -198,3 +198,17 @@ def L_truncate_and_upload_data_to_db(df: pd.DataFrame, table_keyword: Optional[d
         conn.rollback()
     finally:
         conn.close()
+
+
+@task
+def E_query_from_sql(sql: str) -> pd.DataFrame:
+    """輸入MySQL的查詢指令，便可回傳查詢結果"""
+
+    conn = create_pymysql_connect()
+
+    try:
+        df = pd.read_sql(sql, conn)
+        return df.to_dict(orient='records')
+
+    except Exception as e:
+        raise Exception(f"執行指令時發生錯誤：{e}")
