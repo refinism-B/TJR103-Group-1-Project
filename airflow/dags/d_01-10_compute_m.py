@@ -25,7 +25,7 @@ default_args = {
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "location"]
+    tags=["sonia", "bevis", "monthly", "analyze"]
 )
 def d_01_10_compute_m():
     @task
@@ -111,3 +111,9 @@ def d_01_10_compute_m():
     df_merged = T_merged_fillna(df=df_merged)
 
     df_result = T_calculate_weight_and_mscore(df=df_merged, t=30)
+
+    dfm.L_truncate_and_upload_data_to_db(
+        df=df_result, table_name="A_agg_district_cat_m")
+
+
+d_01_10_compute_m()
