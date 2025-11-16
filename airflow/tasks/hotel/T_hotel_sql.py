@@ -4,7 +4,7 @@ from utils import readdata as rd
 
 def main():
     raw_path = "/opt/airflow/data/processed/hotel/hotel_data_cat_id.csv"
-    processed_path = "/opt/airflow/data/complete/hotel/hotel_data_final.csv"
+    processed_path = "/opt/airflow/data/data/complete/store/type=hotal/store.csv"
 
     # 讀取原始檔案
     df = rd.get_csv_data(raw_path)

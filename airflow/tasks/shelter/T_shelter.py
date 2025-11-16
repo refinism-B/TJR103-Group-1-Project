@@ -1,82 +1,50 @@
-# T_shelter.py
 import os
 import re
 import requests
 import pandas as pd
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
-import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
 
-# === Google Maps API 設定 ===
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or "請填入你的Google API金鑰"
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GOOGLE_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 GOOGLE_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
 
-# === 檔案設定 ===
-PROCESSED_DIR = os.path.join(os.getcwd(), "data", "processed", "shelter")
-os.makedirs(PROCESSED_DIR, exist_ok=True)
-PROCESSED_PATH = os.path.join(PROCESSED_DIR, "shelter_processed.csv")
 
-# === 六都對應表 ===
-CITY_LOC_MAP = {
-    "新北市": "NTP", "臺北市": "TPE", "桃園市": "TYN",
-    "臺中市": "TCH", "臺南市": "TNA", "高雄市": "KSH"
-}
+def get_engine():
+    username = os.getenv("MYSQL_USERNAME")
+    password = os.getenv("MYSQL_PASSWORD")
+    ip = os.getenv("MYSQL_IP")
+    port = os.getenv("MYSQL_PORT")
+    db = os.getenv("MYSQL_DB_NAME")
+    return create_engine(f"mysql+pymysql://{username}:{password}@{ip}:{port}/{db}")
 
 
-# === Google Maps 查詢 ===
-def get_google_info(name, address):
-    try:
-        params = {"query": f"{name} {address}", "key": GOOGLE_API_KEY, "language": "zh-TW"}
-        search = requests.get(GOOGLE_SEARCH_URL, params=params, timeout=10)
-        data = search.json()
-        if not data.get("results"):
-            return None
-
-        result = data["results"][0]
-        place_id = result.get("place_id")
-
-        details_params = {
-            "place_id": place_id,
-            "fields": "rating,user_ratings_total,opening_hours,url,website,"
-                      "business_status,geometry,reviews",
-            "language": "zh-TW",
-            "key": GOOGLE_API_KEY,
-        }
-        details = requests.get(GOOGLE_DETAILS_URL, params=details_params, timeout=10).json().get("result", {})
-
-        opening_hours = None
-        if details.get("opening_hours") and "weekday_text" in details["opening_hours"]:
-            opening_hours = "; ".join(details["opening_hours"]["weekday_text"])
-
-        newest_review = ""
-        if "reviews" in details and details["reviews"]:
-            review = details["reviews"][0]
-            time_str = datetime.fromtimestamp(review["time"]).strftime("%Y-%m-%d")
-            text = review.get("text", "").replace("\n", " ").strip()
-            newest_review = f"[{time_str}] {text}"
-
-        return {
-            "buss_status": details.get("business_status", "OPERATIONAL"),
-            "rating": details.get("rating"),
-            "rating_total": details.get("user_ratings_total"),
-            "opening_hours": opening_hours,
-            "longitude": details.get("geometry", {}).get("location", {}).get("lng"),
-            "latitude": details.get("geometry", {}).get("location", {}).get("lat"),
-            "map_url": details.get("url"),
-            "website": details.get("website", ""),
-            "place_id": place_id,
-            "newest_review": newest_review
-        }
-    except Exception:
-        return None
+def standardize_columns(df):
+    return df.rename(columns={
+        "Name": "name", "ShelterName": "name", "收容所名稱": "name",
+        "Address": "address", "地址": "address",
+        "Tel": "phone", "Phone": "phone", "電話": "phone"
+    })
 
 
-# === 每週營業時數計算 ===
+def clean_address(address):
+    address = re.sub(r"^\d{3,5}", "", str(address))
+    address = re.sub(r"[\(（][^\)）]*[\)）]", "", address)
+    return address.strip()
+
+
+def clean_name(name):
+    """移除半形/全形括弧及括弧內的文字"""
+    if not isinstance(name, str):
+        return name
+    name = re.sub(r"[\(（].*?[\)）]", "", name)
+    return name.strip()
+
+
 def parse_opening_hours(opening_hours_str):
     if not opening_hours_str or pd.isna(opening_hours_str):
         return None
@@ -102,39 +70,78 @@ def parse_opening_hours(opening_hours_str):
     return round(total_hours, 2)
 
 
-# === 地址清理 ===
-def clean_address(address):
-    if pd.isna(address):
-        return address
-    address = re.sub(r"^\d{3,5}", "", str(address))  # 移除郵遞區號
-    address = re.sub(r"[\(（][^\)）]*[\)）]", "", address)  # 去掉括號內容
-    return address.strip()
+def get_google_info(name, address):
+    try:
+        params = {"query": f"{name} {address}", "key": GOOGLE_API_KEY, "language": "zh-TW"}
+        search = requests.get(GOOGLE_SEARCH_URL, params=params, timeout=10).json()
+        if not search.get("results"):
+            return None
+        result = search["results"][0]
+        place_id = result.get("place_id")
+
+        details_params = {
+            "place_id": place_id,
+            "fields": "rating,user_ratings_total,opening_hours,url,website,"
+                      "business_status,geometry,reviews",
+            "language": "zh-TW",
+            "key": GOOGLE_API_KEY,
+        }
+        details = requests.get(GOOGLE_DETAILS_URL, params=details_params, timeout=10).json().get("result", {})
+
+        opening_hours = "; ".join(details.get("opening_hours", {}).get("weekday_text", []))
+        newest_review = ""
+        if "reviews" in details and details["reviews"]:
+            review = details["reviews"][0]
+            time_str = datetime.fromtimestamp(review["time"]).strftime("%Y-%m-%d")
+            text = review.get("text", "").replace("\n", " ").strip()
+            newest_review = f"[{time_str}] {text}"
+
+        return {
+            "buss_status": details.get("business_status", "OPERATIONAL"),
+            "rating": details.get("rating"),
+            "rating_total": details.get("user_ratings_total"),
+            "opening_hours": opening_hours,
+            "longitude": details.get("geometry", {}).get("location", {}).get("lng"),
+            "latitude": details.get("geometry", {}).get("location", {}).get("lat"),
+            "map_url": details.get("url"),
+            "website": details.get("website", ""),
+            "place_id": place_id,
+            "newest_review": newest_review
+        }
+    except Exception:
+        return None
 
 
-# === 官方網站修正 ===
-SPECIAL_WEBSITES = [
-    (re.compile(r"(基隆|基隆市)"), "https://www.klaphio.klcg.gov.tw/tw/klaphio/1326.html"),
-]
-
-def pick_official_website(name, address, website):
-    w = (website or "").strip().lower()
-    if any(bad in w for bad in [
-        "facebook.com",
-        "asms.coa.gov.tw",
-        "animal.coa.gov.tw",
-        "animal-adoption.coa.gov.tw",
-        "adopt.coa.gov.tw"
-    ]):
-        w = ""
-    for pattern, url in SPECIAL_WEBSITES:
-        if pattern.search(name) or pattern.search(address):
-            return url
-    return w
+def extract_city_district(address):
+    match = re.match(r"(臺北市|新北市|桃園市|臺中市|臺南市|高雄市)(\S+區)", str(address))
+    return match.groups() if match else (None, None)
 
 
-# === 主轉換流程 ===
+def get_loc_id_from_db(city, district):
+    if not city or not district:
+        return None
+    engine = get_engine()
+    query = text("SELECT loc_id FROM location WHERE city = :city AND district = :district LIMIT 1")
+    with engine.connect() as conn:
+        result = conn.execute(query, {"city": city, "district": district}).fetchone()
+        return result[0] if result else None
+
+
 def transform(df):
     print("⚙️ [T] Transform - 開始資料清理與整合...")
+    df = standardize_columns(df)
+
+    # ================================
+    # ⭐ 移除括弧內容（新增的部分）
+    # ================================
+    df["name"] = df["name"].apply(clean_name)
+
+    print("📋 傳入 transform() 的欄位：", df.columns.tolist())
+
+    required_cols = ["name", "address"]
+    missing = [col for col in required_cols if col not in df.columns]
+    if missing:
+        raise ValueError(f"❌ 缺少必要欄位：{missing}")
 
     df["address"] = df["address"].apply(clean_address)
 
@@ -149,39 +156,26 @@ def transform(df):
     gdf = pd.DataFrame.from_dict(results, orient="index")
     df = pd.concat([df, gdf], axis=1)
 
-    def get_loc_id(addr):
-        for city, prefix in CITY_LOC_MAP.items():
-            if city in str(addr):
-                return prefix + "000"
-        return None
+    df["city"], df["district"] = zip(*df["address"].apply(extract_city_district))
+    df["loc_id"] = df.apply(lambda r: get_loc_id_from_db(r["city"], r["district"]), axis=1)
+    df["op_hours"] = df["opening_hours"].apply(parse_opening_hours)
 
-    df["loc_id"] = df["address"].apply(get_loc_id)
-    df["website"] = df.apply(lambda r: pick_official_website(r["name"], r["address"], r.get("website", "")), axis=1)
-    if "opening_hours" in df.columns:
-        df["op_hours"] = df["opening_hours"].apply(parse_opening_hours)
-    else:
-        df["op_hours"] = None
+    df["newest_review"] = df["newest_review"].apply(
+        lambda x: re.search(r"\d{4}-\d{2}-\d{2}", str(x)).group(0)
+        if re.search(r"\d{4}-\d{2}-\d{2}", str(x))
+        else None
+    )
 
-    # === 🆕 只保留 newest_review 日期 ===
-    if "newest_review" in df.columns:
-        df["newest_review"] = df["newest_review"].apply(
-            lambda x: re.sub(r"\s+", " ", x) if isinstance(x, str) else x
-        )
-    else:
-        df["newest_review"] = None
+    df = df[df["loc_id"].notna()].reset_index(drop=True)
+    print(f"✅ loc_id 對應成功筆數：{len(df)}")
 
-    print("🏙️ 過濾六都資料並重新編號中...")
-
-    # === 🔍 只保留六都資料 ===
-    six_city_keywords = list(CITY_LOC_MAP.keys())
-    df = df[df["address"].apply(lambda x: any(city in str(x) for city in six_city_keywords))].reset_index(drop=True)
-
-    # === 🔢 重新編號 ID ===
     df["id"] = [f"sh{str(i+1).zfill(4)}" for i in range(len(df))]
     df["category_id"] = 6
     df["update_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # === 欄位順序 ===
+    df["name"] = df["name"].str.replace("（整修中）", "", regex=False).str.strip()
+
+
     df = df[[
         "id", "name", "buss_status", "loc_id", "address", "phone",
         "op_hours", "category_id", "rating", "rating_total",
@@ -189,7 +183,14 @@ def transform(df):
         "website", "place_id", "update_time"
     ]]
 
-    df.to_csv(PROCESSED_PATH, index=False, encoding="utf-8-sig")
-    print(f"📊 已輸出六都資料：{PROCESSED_PATH}")
-    print(f"✅ 六都資料筆數：{len(df)}")
+    output_paths = [
+        os.path.join(os.getcwd(), "TJR103GROUP1", "airflow", "data", "processed", "shelter", "shelter_processed.csv"),
+        "/opt/airflow/data/data/complete/store/type=shelter/store.csv"
+    ]
+
+    for path in output_paths:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        df.to_csv(path, index=False, encoding="utf-8-sig")
+        print(f"📊 已輸出資料至：{path}")
+
     return df

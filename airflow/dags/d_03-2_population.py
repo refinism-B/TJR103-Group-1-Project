@@ -1,79 +1,112 @@
-import sys
+# d_03-2_population.py
+
+
 import os
+import sys
+sys.path.append('/opt/airflow/tasks')
+sys.path.append('/opt/airflow/utils')
+sys.path.append('/opt/airflow/drivers')
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-# === 🧩 設定模組搜尋路徑 (for tasks/population modules) ===
-current_dir = os.path.dirname(os.path.abspath(__file__))          # /opt/airflow/dags
-project_root = os.path.dirname(current_dir)                       # /opt/airflow
-sys.path.append(os.path.join(project_root, "tasks", "population"))  # /opt/airflow/tasks/population
+# ==========================================================
+# 設定專案根目錄 (airflow 的上一層)
+# ==========================================================
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))  # airflow/ 的上一層
 
-# === 🧩 匯入自訂模組 ===
-# 確認你有 tasks/population/E_pop.py 並包含必要的函式
-from E_pop import fetch_raw_data
-from T_pop import transform
-from L_pop import load
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-# === ⚙️ DAG 預設參數 ===
+# ==========================================================
+# 匯入人口 ETL 模組
+# ==========================================================
+from tasks.population.E_pop import fetch_raw_data
+from tasks.population.T_pop import transform
+from tasks.population.L_pop import load
+
+# ==========================================================
+# 預設參數
+# ==========================================================
 default_args = {
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "Ken",
+    "depends_on_past": False,
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=3),
 }
 
-# === 🗓️ 定義 DAG ===
+# ==========================================================
+# DAG 設定
+# ==========================================================
 with DAG(
-    dag_id='d_03-2_population',
+    dag_id="d03_2_population",
+    description="Population ETL Pipeline (with MySQL location mapping)",
     default_args=default_args,
-    description='ETL pipeline for Taiwan population data',
-    schedule=None,  # Airflow 3.x 新寫法
-    start_date=datetime(2024, 1, 1),
+    schedule="@monthly",   # 或 None, 或 cron 表達式
+    start_date=datetime(2024, 12, 1),
     catchup=False,
-    tags=['517', 'population', 'monthly'],
+    tags=["population", "ETL", "monthly"],
 ) as dag:
 
-    # === 🧮 Extract 任務 ===
+    # --------------------------
+    # Extract
+    # --------------------------
     def extract_task():
         print("📊 [E] Extract - 抓取內政部人口統計資料中...")
         df_raw = fetch_raw_data()
-        raw_dir = "/opt/airflow/data/raw"
-        os.makedirs(raw_dir, exist_ok=True)
-        df_raw.to_csv(f"{raw_dir}/population_raw.csv", index=False)
-        print(f"✅ Extract 完成，共 {len(df_raw)} 筆資料！")
-        return "extract done"
+        print(f"✅ 已抓取原始人口資料，共 {len(df_raw)} 筆")
+        return df_raw.to_json(orient="records", force_ascii=False)
 
-    # === 🧹 Transform 任務 ===
-    def transform_task():
-        print("⚙️ [T] Transform - 整理人口統計資料中...")
+    # --------------------------
+    # Transform
+    # --------------------------
+    def transform_task(**kwargs):
         import pandas as pd
-        raw_path = "/opt/airflow/data/raw/population_raw.csv"
-        processed_dir = "/opt/airflow/data/processed"
-        os.makedirs(processed_dir, exist_ok=True)
+        ti = kwargs["ti"]
 
-        df_raw = pd.read_csv(raw_path)
+        df_raw_json = ti.xcom_pull(task_ids="extract_population")
+        df_raw = pd.read_json(df_raw_json, orient="records")
+
+        print("⚙️ [T] Transform - 清理並對應 MySQL location...")
         df_processed = transform(df_raw)
-        df_processed.to_csv(f"{processed_dir}/population_processed.csv", index=False)
+        print(f"✅ 已轉換人口資料，共 {len(df_processed)} 筆")
+        return df_processed.to_json(orient="records", force_ascii=False)
 
-        print(f"✅ Transform 完成，輸出 {len(df_processed)} 筆資料！")
-        return "transform done"
-
-    # === 💾 Load 任務 ===
-    def load_task():
-        print("💾 [L] Load - 匯入 MySQL 中...")
+    # --------------------------
+    # Load
+    # --------------------------
+    def load_task(**kwargs):
         import pandas as pd
-        processed_path = "/opt/airflow/data/processed/population_processed.csv"
-        df_processed = pd.read_csv(processed_path)
+        ti = kwargs["ti"]
+
+        df_processed_json = ti.xcom_pull(task_ids="transform_population")
+        df_processed = pd.read_json(df_processed_json, orient="records")
+
+        print("💾 [L] Load - 匯入 MySQL 中...")
         load(df_processed)
-        print("🎉 ETL Population Pipeline 全部完成！")
-        return "load done"
+        print("🎉 Population ETL Pipeline 完成！")
 
-    # === DAG 任務順序 ===
-    t1 = PythonOperator(task_id='extract', python_callable=extract_task)
-    t2 = PythonOperator(task_id='transform', python_callable=transform_task)
-    t3 = PythonOperator(task_id='load', python_callable=load_task)
+    # ==========================================================
+    # Airflow Tasks
+    # ==========================================================
+    extract_population = PythonOperator(
+        task_id="extract_population",
+        python_callable=extract_task,
+    )
 
-    t1 >> t2 >> t3
+    transform_population = PythonOperator(
+        task_id="transform_population",
+        python_callable=transform_task,
+    )
+
+    load_population = PythonOperator(
+        task_id="load_population",
+        python_callable=load_task,
+    )
+
+    # 任務順序
+    extract_population >> transform_population >> load_population

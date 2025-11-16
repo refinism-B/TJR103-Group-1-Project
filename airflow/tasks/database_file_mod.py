@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from airflow.decorators import task
 import pymysql
+from tasks import pandas_mod as pdm
+from typing import Optional
 
 
 """
@@ -134,7 +136,11 @@ def E_load_from_sql(table_name: str) -> pd.DataFrame:
 
 @task
 def L_upload_data_to_db(df: pd.DataFrame, sql: str):
-    """將df中的資料輸入MySQL的table中，需提供SQL指令"""
+    """
+    將df中的資料輸入MySQL的table中，
+    輸入的資料會直接append在table
+    需提供SQL指令
+    """
     conn = create_pymysql_connect()
     cursor = conn.cursor()
 
@@ -153,25 +159,56 @@ def L_upload_data_to_db(df: pd.DataFrame, sql: str):
 
 
 @task
-def L_truncate_and_upload_data_to_db(df: pd.DataFrame, sql: str, table_keyword: dict):
-    """將df中的資料輸入MySQL的table中，需提供SQL指令"""
-    table_name = table_keyword["file_name"]
+def L_truncate_and_upload_data_to_db(df: pd.DataFrame, table_keyword: Optional[dict] = None, table_name: Optional[str] = None):
+    """
+    將df中的資料輸入MySQL的table中，
+    在輸入時會先將原本的表作truncate再重新輸入。
+    """
+    if table_keyword:
+        table_name = table_keyword["file_name"]
+    elif table_name:
+        pass
+    else:
+        raise TypeError("請定義table名稱！")
+
+    col_str = pdm.S_get_columns_str(df=df)
+
+    value_str = pdm.S_get_columns_length_values(df=df)
+
+    print(f"col_str{col_str}")
+    print(f"value_str：{value_str}")
+
+    sql = f"INSERT INTO {table_name} ({col_str}) VALUES({value_str})"
+    print(f"指令：{sql}")
 
     conn = create_pymysql_connect()
-    cursor = conn.cursor()
 
     data = list(df.itertuples(index=False, name=None))
 
     try:
-        truncate_sql = f"TRUNCATE TABLE {table_name}"
-        cursor.execute(truncate_sql)
+        with conn.cursor() as cursor:
+            truncate_sql = f"TRUNCATE TABLE {table_name}"
+            cursor.execute(truncate_sql)
 
-        cursor.executemany(sql, data)
+            cursor.executemany(sql, data)
         conn.commit()
         print("資料寫入資料庫成功！")
     except Exception as e:
-        print(f"資料寫入資料褲時發生錯誤：{e}")
+        print(f"資料寫入資料庫時發生錯誤：{e}")
         conn.rollback()
     finally:
-        cursor.close()
         conn.close()
+
+
+@task
+def E_query_from_sql(sql: str) -> pd.DataFrame:
+    """輸入MySQL的查詢指令，便可回傳查詢結果"""
+
+    conn = create_pymysql_connect()
+
+    try:
+        df = pd.read_sql(sql, conn)
+        return df.to_dict(orient='records')
+
+    except Exception as e:
+        raise Exception(f"執行指令時發生錯誤：{e}")
