@@ -19,11 +19,12 @@ t = 30
 #讀取店家評論數以及行政區資料（v_fact_store_all + location）
 sql_stores = """
 select
+    f.loc_id,
     f.category_id,
     f.rating_total as reviews,
     l.city,
     l.district
-from v_fact_store_all as f
+from v_2fact_store_all as f
 left join location as l 
   on f.loc_id = l.loc_id;
 """
@@ -32,9 +33,9 @@ stores = pd.read_sql(sql_stores, engine)
 
 # 讀行政區跟類別的樣本數（v_district_cat_stats）
 sql_stats = """
-SELECT
-    city, district, category_id, n_district_cat
-FROM v_district_cat_stats;
+select
+    loc_id, city, district, category_id, n_district_cat
+from v_3district_cat_stats;
 """
 stats = pd.read_sql(sql_stats, engine)
 
@@ -76,10 +77,10 @@ merged["m_city_district_cat"] = (
     (1 - merged["w_district_cat"]) * merged["p75_city_cat"]
 )
 
-result = merged[["city", "district", "category_id", "m_city_district_cat"]].copy()
+result = merged[["loc_id","city", "district", "category_id", "m_city_district_cat"]].copy()
 
 
 # 覆蓋到 agg_district_cat_m
 with engine.begin() as conn:
-    conn.exec_driver_sql("truncate table A_agg_district_cat_m")
-    result.to_sql("A_agg_district_cat_m", con=conn, if_exists="append", index=False)
+    # 沒有這張表就自動建立，有的話整張重建
+    result.to_sql("A_4agg_district_cat_m", con=conn, if_exists="replace", index=False)
