@@ -232,3 +232,5 @@ wrapt==2.0.0 ; python_version >= "3.11" and python_version < "3.14"
 wsproto==1.2.0 ; python_version >= "3.11" and python_version < "3.14"
 xlrd==2.0.2 ; python_version >= "3.11" and python_version < "3.14"
 zipp==3.23.0 ; python_version >= "3.11" and python_version < "3.14"
+geopandas
+selenium==4.15.2

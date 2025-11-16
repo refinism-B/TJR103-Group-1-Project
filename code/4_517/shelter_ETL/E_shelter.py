@@ -10,7 +10,7 @@ os.makedirs(RAW_DIR, exist_ok=True)
 RAW_PATH = os.path.join(RAW_DIR, "shelter_raw.csv")
 
 # === 農業部 OpenData API ===
-MOA_API_URL = "https://data.moa.gov.tw/Service/OpenData/ODwsv/ODwsvTravelFood.aspx?FName=animal_adopt"
+MOA_API_URL = "https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=2thVboChxuKs"
 
 
 def fetch_raw_data(max_retries=3, timeout=60, use_cache=True):
