@@ -1,8 +1,5 @@
 import os
 import time
-import pandas as pd
-import requests
-from io import BytesIO
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -12,33 +9,18 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-def fetch_raw_data():
-    """
-    從內政部開放資料抓取鄉鎮人口統計 Excel 檔，
-    並轉為 pandas DataFrame 回傳。
-    """
-    url = "https://data.moi.gov.tw/MoiOD/System/DownloadFile.aspx?DATA=F98EAC6E-85C5-4B93-A79B-A53A655F8A0E"
-
-    # ✅ 使用 requests 抓取內容
-    response = requests.get(url)
-    response.raise_for_status()
-
-    # ✅ 用 openpyxl 解析 Excel 內容
-    df = pd.read_excel(BytesIO(response.content), engine="openpyxl")
-    print(f"📥 已抓取 {len(df)} 筆人口資料")
-    return df
-
-
 def fetch_population_data(raw_dir):
-    """用 Selenium 從內政部頁面下載最新人口 XLS 檔案"""
+    """
+    使用 Selenium 自動下載內政部人口統計 XLS 檔案，並回傳檔案路徑與年月。
+    """
     chrome_options = Options()
     chrome_options.add_experimental_option("prefs", {
-        "download.default_directory": raw_dir,  # ✅ 儲存到 data/raw/population
+        "download.default_directory": raw_dir,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
     })
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")  # 可選：無頭模式
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
@@ -68,13 +50,13 @@ def fetch_population_data(raw_dir):
         select_month.select_by_visible_text(latest_month)
         print(f"📅 已選擇最新年月：{latest_year} 年 {latest_month} 月")
 
-        # === 點選 XLS radio 按鈕 ===
+        # === 選擇 XLS 格式 ===
         print("📄 選擇 XLS 格式...")
         xls_radio = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='xls']")))
         driver.execute_script("arguments[0].click();", xls_radio)
         time.sleep(1)
 
-        # === 點擊「下載」按鈕 ===
+        # === 點擊下載 ===
         print("⬇️ 點擊『下載』按鈕...")
         download_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'下載')]")))
         driver.execute_script("arguments[0].click();", download_btn)
@@ -107,3 +89,6 @@ def fetch_population_data(raw_dir):
         except:
             pass
         return None, None, None
+    
+def fetch_raw_data(raw_dir):
+    return fetch_population_data(raw_dir)

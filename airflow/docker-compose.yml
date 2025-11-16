@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    restart: always
+
+  airflow-init:
+    image: apache/airflow:2.10.0-python3.12
+    depends_on:
+      - postgres
+    entrypoint: >
+      bash -c "
+      airflow db init &&
+      airflow users create
+        --username admin
+        --firstname Ken
+        --lastname Chen
+        --role Admin
+        --email admin@example.com
+        --password admin
+      "
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: "NnHt5E3FTLzmbCRr4I5ml2E5k-0pge0QAgcA9xnUXBY="
+    user: "${AIRFLOW_UID:-50000}:0"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./tasks:/opt/airflow/tasks
+      - ./utils:/opt/airflow/utils
+      - ./drivers:/opt/airflow/drivers
+    restart: "no"
+
+  airflow-webserver:
+    image: apache/airflow:2.10.0-python3.12
+    depends_on:
+      - postgres
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+    user: "${AIRFLOW_UID:-50000}:0"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./tasks:/opt/airflow/tasks
+      - ./utils:/opt/airflow/utils
+      - ./drivers:/opt/airflow/drivers
+    ports:
+      - "8080:8080"
+    command: webserver
+    restart: always
+
+  airflow-scheduler:
+    image: apache/airflow:2.10.0-python3.12
+    depends_on:
+      - postgres
+      - airflow-init
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    user: "${AIRFLOW_UID:-50000}:0"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./tasks:/opt/airflow/tasks
+      - ./utils:/opt/airflow/utils
+      - ./drivers:/opt/airflow/drivers
+    command: scheduler
+    restart: always
+
+volumes:
+  postgres-db-volume:
