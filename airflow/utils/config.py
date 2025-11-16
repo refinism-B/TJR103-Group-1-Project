@@ -142,3 +142,50 @@ LOCATION_AREA_URL = "https://www.ris.gov.tw/info-popudata/app/awFastDownload/fil
 
 # 地區面積表的欄位
 LOCATION_AREA_COLUMNS = ["location", "population", "area", "density"]
+
+# loc id前綴字串
+LOC_ID_STR = {
+    "新北市": "NTP",
+    "臺北市": "TPE",
+    "桃園市": "TYN",
+    "臺中市": "TCH",
+    "臺南市": "TNA",
+    "高雄市": "KSH"
+}
+
+# location表最終欄位名
+LOCATION_FINAL_COLUMNS = [
+    'loc_id',
+    'city',
+    'district',
+    'area',
+    'population'
+]
+
+# location中的市列表
+TAIWAN_CITY_LIST = ['新北市',
+                    '臺北市',
+                    '桃園市',
+                    '臺中市',
+                    '臺南市',
+                    '高雄市',
+                    '臺灣省',
+                    '宜蘭縣',
+                    '新竹縣',
+                    '苗栗縣',
+                    '彰化縣',
+                    '南投縣',
+                    '雲林縣',
+                    '嘉義縣',
+                    '屏東縣',
+                    '臺東縣',
+                    '花蓮縣',
+                    '澎湖縣',
+                    '基隆市',
+                    '新竹市',
+                    '嘉義市',
+                    '福建省',
+                    '金門縣',
+                    '連江縣',
+                    '東沙群島',
+                    '南沙群島']
