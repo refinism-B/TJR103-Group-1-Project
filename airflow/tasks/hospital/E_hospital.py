@@ -1,10 +1,12 @@
 import time
+
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.edge.options import Options
 from selenium.common import exceptions
 from selenium.webdriver.common.by import By
+from selenium.webdriver.edge.options import Options
+from selenium.webdriver.edge.service import Service
 from utils import savedata as sd
 
 
@@ -19,9 +21,18 @@ def main():
     # 對edge的options加上headers
     options = Options()
     options.add_argument("user-agent=MyAgent/1.0")
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--remote-debugging-port=9222")
+    options.add_argument("--disable-software-rasterizer")
+    options.add_argument("--disable-extensions")
+
+    service = Service("/opt/airflow/drivers/msedgedriver/msedgedriver")
 
     # 設定edge的driver
-    driver = webdriver.Edge(options=options)
+    driver = webdriver.Edge(service=service, options=options)
 
     driver.get(URL)
     time.sleep(2)
@@ -79,4 +90,5 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
     main()

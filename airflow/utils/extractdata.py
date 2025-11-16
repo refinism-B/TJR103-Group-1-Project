@@ -7,13 +7,14 @@ from mods import extractdata as ed
 
 import ast
 import re
-import pandas as pd
+
 import numpy as np
-from utils import gmap as gm
-from utils import connectDB as connDB
-from utils import savedata as sd
-from utils import date_mod as dm
+import pandas as pd
 from colorama import Fore
+from utils import connectDB as connDB
+from utils import date_mod as dm
+from utils import gmap as gm
+from utils import savedata as sd
 
 
 def extract_city_district(address: str) -> tuple[str, str]:
@@ -64,6 +65,7 @@ def gdata_place_id(df: pd.DataFrame, api_key: str, save_path: str) -> pd.DataFra
     # ------------------------------------------------------------
     # 取得 place_id
     # ------------------------------------------------------------
+    print(api_key)
     place_ids = []
     for _, row in df.iterrows():
         query = f"{row['name']} {row['address']}"
@@ -210,8 +212,8 @@ def merge_loc(
     # 連線DB
     conn, cursor = connDB.connect_db(host, port, user, password, db)
     df_loc = connDB.get_loc_table(conn, cursor)
-    cursor.close()
-    conn.close()
+    # cursor.close()
+    # conn.close()
     print(Fore.GREEN + "✅ Cursor and connection have been closed.")
 
     # ------------------------------------------------------------
@@ -286,6 +288,10 @@ def cat_id(
 
     # 原本的df創立一個cat_id並賦值
     df["cat_id"] = df_cat["category_id"].iloc[0]
+    
+    if category == "hospital":
+        # 判斷168小時醫院並將cat_id變成7
+        df.loc[df["opening_hours"] == 168, "cat_id"] = 7
 
     # 調整欄位
     columns = [
