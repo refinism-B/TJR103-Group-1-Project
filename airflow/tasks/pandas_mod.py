@@ -162,3 +162,20 @@ def S_count_data(df: pd.DataFrame) -> int:
     """計算並回傳df的資料筆數"""
     count = len(df)
     return count
+
+
+def S_get_columns_str(df: pd.DataFrame) -> str:
+    """將欄位名取出並組成一個字串。主要用於sql指令輸入欄位名"""
+    column_list = list(df.columns)
+    col_str = ", ".join(column_list)
+
+    return col_str
+
+
+def S_get_columns_length_values(df: pd.DataFrame) -> str:
+    """計算欄位數，並產生等數的"%s"字串，只要用於sql指令"""
+    column_count = len(df.columns)
+    value_list = ["%s" for _ in range(column_count)]
+    value_str = ", ".join(value_list)
+
+    return value_str

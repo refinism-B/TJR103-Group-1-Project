@@ -40,9 +40,28 @@ def d_01_8_GCS_sync_and_backup():
             "destination_folder": destination_folder
         }
 
+    @task
+    def S_get_upload_folder_setting():
+        source_folder = "/opt/airflow/data/complete/store"
+        destination_folder = "test_data/test/store"
+        bucket_name = "tjr103-1-project-bucket"
+
+        return {
+            "source_folder": source_folder,
+            "destination_folder": destination_folder,
+            "bucket_name": bucket_name
+        }
+
     backup_setting = S_get_backup_setting()
 
-    gcs.T_backup_file(backup_setting=backup_setting)
+    backup = gcs.T_backup_file(backup_setting=backup_setting)
+
+    """現在GCS路徑是測試路徑，正式上線需修改成正式路徑"""
+    folder_setting = S_get_upload_folder_setting()
+
+    gcs.L_upload_folder_to_gcs(folder_setting=folder_setting)
+
+    backup >> folder_setting
 
 
 d_01_8_GCS_sync_and_backup()

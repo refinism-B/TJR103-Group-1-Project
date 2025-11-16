@@ -283,8 +283,8 @@ def T_trans_op_time_to_hours(df: pd.DataFrame) -> pd.DataFrame:
 def S_get_finish_save_setting(keyword_dict: dict) -> dict:
     """取得完成檔的存檔資訊"""
     file_date = date.today().strftime("%Y%m%d")
-    folder = f"/opt/airflow/data/complete/{keyword_dict['file_name']}/dt={file_date}"
-    file_name = f"{keyword_dict['file_name']}_finish.csv"
+    folder = f"/opt/airflow/data/complete/store/type={keyword_dict['file_name']}"
+    file_name = "store.csv"
 
     return {"folder": folder, "file_name": file_name}
 
