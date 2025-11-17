@@ -68,6 +68,7 @@ with DAG(
     def transform_task():
 
         print("⚙️ [T] Transform - 清理並對應 MySQL location...")
+        # TODO 要手動修改檔名
         df_processed = transform_population_data(
             "/opt/airflow/data/raw/population/鄉鎮戶數及人口數-114年10月.xls"
         )
