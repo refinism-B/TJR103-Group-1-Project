@@ -80,7 +80,8 @@ GSEARCH_CITY_CODE = {
     "桃園市": "TYU",
     "臺中市": "TCH",
     "臺南市": "TNA",
-    "高雄市": "KSH"
+    "高雄市": "KSH",
+    "臺北市": "TPEI"
 }
 
 
