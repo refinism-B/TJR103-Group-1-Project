@@ -146,7 +146,6 @@ def clean_sort(df: pd.DataFrame, save_path: str):
         "district",
         "business_status",
         "opening_hours",
-        "types",
         "rating",
         "rating_total",
         "longitude",
@@ -161,7 +160,7 @@ def clean_sort(df: pd.DataFrame, save_path: str):
     # 修改opening_hours欄位
     # ------------------------------------------------------------
     # csv讀進來時list會被轉成字串，所以先將str轉成list
-    df_merged["opening_hours"] = df_merged["opening_hours"].apply(str_to_list)
+    # df_merged["opening_hours"] = df_merged["opening_hours"].apply(str_to_list)
     df_merged.loc[:, "opening_hours"] = df_merged["opening_hours"].apply(
         dm.trans_op_time_to_hours
     )
@@ -306,7 +305,6 @@ def cat_id(
         "business_status",
         "opening_hours",
         "cat_id",
-        "types",
         "rating",
         "rating_total",
         "longitude",

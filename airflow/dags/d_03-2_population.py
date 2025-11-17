@@ -3,13 +3,15 @@
 
 import os
 import sys
-sys.path.append('/opt/airflow/tasks')
-sys.path.append('/opt/airflow/utils')
-sys.path.append('/opt/airflow/drivers')
+
+sys.path.append("/opt/airflow/tasks")
+sys.path.append("/opt/airflow/utils")
+sys.path.append("/opt/airflow/drivers")
 from datetime import datetime, timedelta
 
-from airflow import DAG
 from airflow.operators.python import PythonOperator
+
+from airflow import DAG
 
 # ==========================================================
 # 設定專案根目錄 (airflow 的上一層)
@@ -24,8 +26,8 @@ if PROJECT_ROOT not in sys.path:
 # 匯入人口 ETL 模組
 # ==========================================================
 from tasks.population.E_pop import fetch_raw_data
-from tasks.population.T_pop import transform
 from tasks.population.L_pop import load
+from tasks.population.T_pop import transform_population_data
 
 # ==========================================================
 # 預設參數
@@ -46,7 +48,7 @@ with DAG(
     dag_id="d03_2_population",
     description="Population ETL Pipeline (with MySQL location mapping)",
     default_args=default_args,
-    schedule="@monthly",   # 或 None, 或 cron 表達式
+    schedule="@monthly",  # 或 None, 或 cron 表達式
     start_date=datetime(2024, 12, 1),
     catchup=False,
     tags=["population", "ETL", "monthly"],
@@ -57,37 +59,32 @@ with DAG(
     # --------------------------
     def extract_task():
         print("📊 [E] Extract - 抓取內政部人口統計資料中...")
-        df_raw = fetch_raw_data()
-        print(f"✅ 已抓取原始人口資料，共 {len(df_raw)} 筆")
-        return df_raw.to_json(orient="records", force_ascii=False)
+        fetch_raw_data("/opt/airflow/data/raw/population")
+        print("✅ 已抓取原始人口資料")
 
     # --------------------------
     # Transform
     # --------------------------
-    def transform_task(**kwargs):
-        import pandas as pd
-        ti = kwargs["ti"]
-
-        df_raw_json = ti.xcom_pull(task_ids="extract_population")
-        df_raw = pd.read_json(df_raw_json, orient="records")
+    def transform_task():
 
         print("⚙️ [T] Transform - 清理並對應 MySQL location...")
-        df_processed = transform(df_raw)
+        df_processed = transform_population_data(
+            "/opt/airflow/data/raw/population/鄉鎮戶數及人口數-114年10月.xls"
+        )
         print(f"✅ 已轉換人口資料，共 {len(df_processed)} 筆")
-        return df_processed.to_json(orient="records", force_ascii=False)
 
     # --------------------------
     # Load
     # --------------------------
-    def load_task(**kwargs):
+    def load_task():
         import pandas as pd
-        ti = kwargs["ti"]
 
-        df_processed_json = ti.xcom_pull(task_ids="transform_population")
-        df_processed = pd.read_json(df_processed_json, orient="records")
+        df = pd.read_csv(
+            "/opt/airflow/data/data/complete/store/type=population/store.csv"
+        )
 
         print("💾 [L] Load - 匯入 MySQL 中...")
-        load(df_processed)
+        load(df)
         print("🎉 Population ETL Pipeline 完成！")
 
     # ==========================================================

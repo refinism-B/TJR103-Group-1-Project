@@ -8,8 +8,8 @@ if PROJECT_ROOT not in sys.path:
 
 # === 正確使用 package import ===
 from tasks.shelter.E_shelter import fetch_raw_data
-from tasks.shelter.T_shelter import transform
 from tasks.shelter.L_shelter import load
+from tasks.shelter.T_shelter import transform
 
 
 def main():
@@ -17,10 +17,10 @@ def main():
     df_raw = fetch_raw_data()
 
     print("⚙️ [T] Transform - 清理與 Google 資料整合中...")
-    df_processed = transform(df_raw)
+    transform(df_raw)
 
     print("💾 [L] Load - 匯入 MySQL 中...")
-    load(df_processed)
+    load()
 
     print("🎉 ETL Shelter Pipeline 完成！")
 

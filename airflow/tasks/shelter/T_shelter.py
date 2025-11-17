@@ -1,11 +1,22 @@
 import os
 import re
-import requests
-import pandas as pd
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from sqlalchemy import create_engine, text
+from datetime import datetime
+
+import pandas as pd
+import requests
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from utils.extractdata import (
+    cat_id,
+    clean_sort,
+    create_id,
+    extract_city_district_from_df,
+    gdata_info,
+    gdata_place_id,
+    merge_loc,
+    to_sql_data,
+)
 
 load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
 
@@ -13,22 +24,36 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GOOGLE_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
 GOOGLE_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
 
+host = os.getenv("MYSQL_IP")
+user = os.getenv("MYSQL_USERNAME")
+password = os.getenv("MYSQL_PASSWORD")
+database = os.getenv("MYSQL_DB_NAME")
+port = int(os.getenv("MYSQL_PORTT"))
+charset = "utf8mb4"
+
 
 def get_engine():
     username = os.getenv("MYSQL_USERNAME")
     password = os.getenv("MYSQL_PASSWORD")
     ip = os.getenv("MYSQL_IP")
-    port = os.getenv("MYSQL_PORT")
+    port = int(os.getenv("MYSQL_PORTT"))
     db = os.getenv("MYSQL_DB_NAME")
     return create_engine(f"mysql+pymysql://{username}:{password}@{ip}:{port}/{db}")
 
 
 def standardize_columns(df):
-    return df.rename(columns={
-        "Name": "name", "ShelterName": "name", "收容所名稱": "name",
-        "Address": "address", "地址": "address",
-        "Tel": "phone", "Phone": "phone", "電話": "phone"
-    })
+    return df.rename(
+        columns={
+            "Name": "name",
+            "ShelterName": "name",
+            "收容所名稱": "name",
+            "Address": "address",
+            "地址": "address",
+            "Tel": "phone",
+            "Phone": "phone",
+            "電話": "phone",
+        }
+    )
 
 
 def clean_address(address):
@@ -72,7 +97,11 @@ def parse_opening_hours(opening_hours_str):
 
 def get_google_info(name, address):
     try:
-        params = {"query": f"{name} {address}", "key": GOOGLE_API_KEY, "language": "zh-TW"}
+        params = {
+            "query": f"{name} {address}",
+            "key": GOOGLE_API_KEY,
+            "language": "zh-TW",
+        }
         search = requests.get(GOOGLE_SEARCH_URL, params=params, timeout=10).json()
         if not search.get("results"):
             return None
@@ -82,13 +111,19 @@ def get_google_info(name, address):
         details_params = {
             "place_id": place_id,
             "fields": "rating,user_ratings_total,opening_hours,url,website,"
-                      "business_status,geometry,reviews",
+            "business_status,geometry,reviews",
             "language": "zh-TW",
             "key": GOOGLE_API_KEY,
         }
-        details = requests.get(GOOGLE_DETAILS_URL, params=details_params, timeout=10).json().get("result", {})
+        details = (
+            requests.get(GOOGLE_DETAILS_URL, params=details_params, timeout=10)
+            .json()
+            .get("result", {})
+        )
 
-        opening_hours = "; ".join(details.get("opening_hours", {}).get("weekday_text", []))
+        opening_hours = "; ".join(
+            details.get("opening_hours", {}).get("weekday_text", [])
+        )
         newest_review = ""
         if "reviews" in details and details["reviews"]:
             review = details["reviews"][0]
@@ -106,14 +141,16 @@ def get_google_info(name, address):
             "map_url": details.get("url"),
             "website": details.get("website", ""),
             "place_id": place_id,
-            "newest_review": newest_review
+            "newest_review": newest_review,
         }
     except Exception:
         return None
 
 
 def extract_city_district(address):
-    match = re.match(r"(臺北市|新北市|桃園市|臺中市|臺南市|高雄市)(\S+區)", str(address))
+    match = re.match(
+        r"(臺北市|新北市|桃園市|臺中市|臺南市|高雄市)(\S+區)", str(address)
+    )
     return match.groups() if match else (None, None)
 
 
@@ -121,7 +158,9 @@ def get_loc_id_from_db(city, district):
     if not city or not district:
         return None
     engine = get_engine()
-    query = text("SELECT loc_id FROM location WHERE city = :city AND district = :district LIMIT 1")
+    query = text(
+        "SELECT loc_id FROM location WHERE city = :city AND district = :district LIMIT 1"
+    )
     with engine.connect() as conn:
         result = conn.execute(query, {"city": city, "district": district}).fetchone()
         return result[0] if result else None
@@ -145,52 +184,46 @@ def transform(df):
 
     df["address"] = df["address"].apply(clean_address)
 
-    print("🌍 查詢 Google Maps 資料中...")
-    results = {}
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = {executor.submit(get_google_info, row["name"], row["address"]): idx for idx, row in df.iterrows()}
-        for future in as_completed(futures):
-            idx = futures[future]
-            results[idx] = future.result() or {}
+    df = df[["name", "address"]]
 
-    gdf = pd.DataFrame.from_dict(results, orient="index")
-    df = pd.concat([df, gdf], axis=1)
-
-    df["city"], df["district"] = zip(*df["address"].apply(extract_city_district))
-    df["loc_id"] = df.apply(lambda r: get_loc_id_from_db(r["city"], r["district"]), axis=1)
-    df["op_hours"] = df["opening_hours"].apply(parse_opening_hours)
-
-    df["newest_review"] = df["newest_review"].apply(
-        lambda x: re.search(r"\d{4}-\d{2}-\d{2}", str(x)).group(0)
-        if re.search(r"\d{4}-\d{2}-\d{2}", str(x))
-        else None
+    df = extract_city_district_from_df(df, "address")
+    df = gdata_place_id(
+        df,
+        GOOGLE_API_KEY,
+        "/opt/airflow/data/processed/shelter/shelter_data_place_id.csv",
     )
+    df = gdata_info(
+        df,
+        GOOGLE_API_KEY,
+        "/opt/airflow/data/processed/shelter/shelter_data_details.csv",
+    )
+    df = clean_sort(df, "/opt/airflow/data/processed/shelter/shelter_data_cleaned.csv")
+    df = create_id(df, "sh", "/opt/airflow/data/processed/shelter/shelter_data_id.csv")
+    df = merge_loc(
+        df,
+        host,
+        port,
+        user,
+        password,
+        database,
+        "/opt/airflow/data/processed/shelter/shelter_data_loc_id.csv",
+    )
+    df = cat_id(
+        df,
+        host,
+        port,
+        user,
+        password,
+        database,
+        "/opt/airflow/data/processed/shelter/shelter_data_cat_id.csv",
+        "shelter",
+    )
+    df = to_sql_data(df, "/opt/airflow/data/processed/shelter/shelter_data_sql.csv")
 
-    df = df[df["loc_id"].notna()].reset_index(drop=True)
-    print(f"✅ loc_id 對應成功筆數：{len(df)}")
+    output_paths = "/opt/airflow/data/data/complete/store/type=shelter/store.csv"
 
-    df["id"] = [f"sh{str(i+1).zfill(4)}" for i in range(len(df))]
-    df["category_id"] = 6
-    df["update_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    df["name"] = df["name"].str.replace("（整修中）", "", regex=False).str.strip()
-
-
-    df = df[[
-        "id", "name", "buss_status", "loc_id", "address", "phone",
-        "op_hours", "category_id", "rating", "rating_total",
-        "newest_review", "longitude", "latitude", "map_url",
-        "website", "place_id", "update_time"
-    ]]
-
-    output_paths = [
-        os.path.join(os.getcwd(), "TJR103GROUP1", "airflow", "data", "processed", "shelter", "shelter_processed.csv"),
-        "/opt/airflow/data/data/complete/store/type=shelter/store.csv"
-    ]
-
-    for path in output_paths:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        df.to_csv(path, index=False, encoding="utf-8-sig")
-        print(f"📊 已輸出資料至：{path}")
+    os.makedirs(os.path.dirname(output_paths), exist_ok=True)
+    df.to_csv(output_paths, index=False, encoding="utf-8-sig")
+    print(f"📊 已輸出資料至：{output_paths}")
 
     return df

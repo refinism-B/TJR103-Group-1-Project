@@ -1,12 +1,12 @@
 import os
 import time
+
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.edge.options import Options
+from selenium.webdriver.edge.service import Service
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 
 def fetch_population_data(raw_dir):
@@ -14,17 +14,22 @@ def fetch_population_data(raw_dir):
     使用 Selenium 自動下載內政部人口統計 XLS 檔案，並回傳檔案路徑與年月。
     """
     chrome_options = Options()
-    chrome_options.add_experimental_option("prefs", {
-        "download.default_directory": raw_dir,
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-        "safebrowsing.enabled": True
-    })
+    chrome_options.add_experimental_option(
+        "prefs",
+        {
+            "download.default_directory": raw_dir,
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safebrowsing.enabled": True,
+        },
+    )
     chrome_options.add_argument("--headless")  # 可選：無頭模式
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    service = Service("/opt/airflow/drivers/msedgedriver/msedgedriver")
+
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     wait = WebDriverWait(driver, 30)
 
     try:
@@ -37,7 +42,11 @@ def fetch_population_data(raw_dir):
         driver.switch_to.frame(iframe)
 
         # === 點擊『鄉鎮戶數及人口數(9701)』 ===
-        btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(),'鄉鎮戶數及人口數(9701)')]")))
+        btn = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//span[contains(text(),'鄉鎮戶數及人口數(9701)')]")
+            )
+        )
         driver.execute_script("arguments[0].click();", btn)
         print("✅ 已點擊『鄉鎮戶數及人口數(9701)』")
 
@@ -52,13 +61,17 @@ def fetch_population_data(raw_dir):
 
         # === 選擇 XLS 格式 ===
         print("📄 選擇 XLS 格式...")
-        xls_radio = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@value='xls']")))
+        xls_radio = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//input[@value='xls']"))
+        )
         driver.execute_script("arguments[0].click();", xls_radio)
         time.sleep(1)
 
         # === 點擊下載 ===
         print("⬇️ 點擊『下載』按鈕...")
-        download_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'下載')]")))
+        download_btn = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'下載')]"))
+        )
         driver.execute_script("arguments[0].click();", download_btn)
 
         # === 等待下載完成 ===
@@ -68,7 +81,9 @@ def fetch_population_data(raw_dir):
         for _ in range(timeout):
             files = [f for f in os.listdir(raw_dir) if f.endswith(".xls")]
             if files:
-                latest_file = max(files, key=lambda f: os.path.getmtime(os.path.join(raw_dir, f)))
+                latest_file = max(
+                    files, key=lambda f: os.path.getmtime(os.path.join(raw_dir, f))
+                )
                 break
             time.sleep(1)
 
@@ -80,15 +95,11 @@ def fetch_population_data(raw_dir):
 
         full_path = os.path.join(raw_dir, latest_file)
         print(f"📁 最新下載檔案：{full_path}")
-        return full_path, latest_year, latest_month
 
     except Exception as e:
         print(f"❌ 抓取人口資料失敗：{e}")
-        try:
-            driver.quit()
-        except:
-            pass
-        return None, None, None
-    
+        driver.quit()
+
+
 def fetch_raw_data(raw_dir):
     return fetch_population_data(raw_dir)
