@@ -264,6 +264,7 @@ def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataF
     print(f"df_main[miss_loc]：{len(df_main[miss_loc])}")
     print(f"缺失的district：{df_main[miss_loc]["district"].tolist()}")
     print(f"缺失的city：{df_main[miss_loc]["city"].tolist()}")
+    print(f"缺失的add：{df_main[miss_loc]["address"].tolist()}")
     print("-----------------------")
 
     # 如果有則進行二次join
