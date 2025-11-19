@@ -126,8 +126,13 @@ def d_01_3_gmap_full_search_restaurant():
     metadata_save_setting = gfs.S_get_metadata_save_setting()
 
     # 將metadata的紀錄存檔成csv
-    dfm.L_save_file_to_csv_by_dict(
+    save_meta_local = dfm.L_save_file_to_csv_by_dict(
         save_setting=metadata_save_setting, df=df_metadata)
+
+    # 將metadata寫入資料庫
+    sql_meta = "INSERT INTO gmap_record (city, search_radius, step, coord_count, data_count, type, update_date) " \
+        "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    save_meta_db = dfm.L_upload_data_to_db(df=df_metadata, sql=sql_meta)
 
     # 簡單清理檔案
     # 去除place id重複資料
@@ -197,6 +202,8 @@ def d_01_3_gmap_full_search_restaurant():
 
     # 存檔至地端
     dfm.L_save_file_to_csv_by_dict(save_setting=main_save_setting, df=df_main)
+
+    save_meta_local >> save_meta_db
 
 
 d_01_3_gmap_full_search_restaurant()
