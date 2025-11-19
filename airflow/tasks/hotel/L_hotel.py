@@ -28,8 +28,6 @@ def main():
     print(df["phone"].head(20))
     print(df["phone"].isna().sum(), "/", len(df))
 
-    df["phone"] = df["phone"].astype(str)
-
     # csv讀取後手機格式會跑掉，透過函式做轉換
     df["phone"] = df["phone"].apply(ed.to_phone)
 
