@@ -23,11 +23,11 @@ default_args = {
     dag_id="d_01-3_gmap_full_search_restaurant",
     default_args=default_args,
     description="[每月更新]透過經緯度爬取六都「寵物美容」列表",
-    schedule_interval="0 10 15 * *",
+    schedule_interval="0 8 15 * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "restaurant", "google_API"]
+    tags=["bevis", "monthly", "restaurant", "google_API", "15/8:00"]
 )
 def d_01_3_gmap_full_search_restaurant():
 

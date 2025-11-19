@@ -25,7 +25,7 @@ default_args = {
     dag_id="d_01-9_location",
     default_args=default_args,
     description="[每日更新]抓取地區資料，並與人口資料合併",
-    schedule_interval="0 20 5 * *",
+    schedule_interval="0 10 5 * *",
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
@@ -94,15 +94,21 @@ def d_01_9_location():
 
         return {"folder": folder, "file_name": file_name}
 
-    ############################################################
-    """
-    尚未設定人口檔案路徑
-    """
-    ############################################################
     @task
     def S_get_population_read_setting():
-        folder = "/opt/airflow/data/processed/population"
-        file_name = "raw_population.csv"
+        today = date.today()
+        if today.month == 1:
+            month = 12
+            year = today.year - 1
+        else:
+            month = today.month - 1
+            year = today.year
+
+        roc_year = str(int(year) - 1911)
+        month = str(month)
+
+        folder = "/opt/airflow/data/raw/population"
+        file_name = f"鄉鎮戶數及人口數-{roc_year}年{month}月.xls"
 
         return {
             "folder": folder,
