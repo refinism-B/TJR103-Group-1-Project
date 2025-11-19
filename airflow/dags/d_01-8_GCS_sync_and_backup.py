@@ -43,7 +43,7 @@ def d_01_8_GCS_sync_and_backup():
     @task
     def S_get_upload_folder_setting():
         source_folder = "/opt/airflow/data/complete/store"
-        destination_folder = "test_data/test/store"
+        destination_folder = "data/complete/store"
         bucket_name = "tjr103-1-project-bucket"
 
         return {
