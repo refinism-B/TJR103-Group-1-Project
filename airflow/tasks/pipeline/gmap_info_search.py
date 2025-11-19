@@ -251,11 +251,10 @@ def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataF
     miss_loc = df_main["loc_id"].isna()
 
     # 如果有則進行二次join
-    if miss_loc.any():
-        # 用 district 對應 loc_id，使用 map 比較安全且不會改變行數
-        district_to_loc_id = df_loc.set_index("district")["loc_id"]
-        df_main.loc[miss_loc, "loc_id"] = df_main.loc[miss_loc,
-                                                      "district"].map(district_to_loc_id)
+    if len(miss_loc) != 0:
+        df_miss = df_main[miss_loc].drop(columns="loc_id")
+        df_miss = df_miss.merge(df_loc, how="left", on="district")
+        df_main.loc[miss_loc, "loc_id"] = df_miss["loc_id"].values
 
     df_main = df_main.drop(columns=["city", "district"])
 
