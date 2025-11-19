@@ -255,6 +255,7 @@ def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataF
     # 第一次merge
     df_main = df_main.merge(df_loc, how="left", on=["city", "district"])
     print(df_main["loc_id"])
+    print(df_main["loc_id"].isna().sum())
 
     # 取出loc id為空值，沒有市資料的索引
     miss_loc = df_main["loc_id"].isna()
