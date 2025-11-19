@@ -389,7 +389,7 @@ def str_to_list(x: str) -> list:
         return [x]
 
 
-def fix_phone(x):
+def to_phone(x):
     if x is None or pd.isna(x):
         return None
 
