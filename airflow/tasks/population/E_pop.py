@@ -30,7 +30,7 @@ def fetch_population_data(raw_dir):
     )
 
     # === Selenium Remote WebDriver ===
-    selen_url = "http://35.194.236.122:4444/wd/hub"
+    selen_url = "http://35.194.236.122:14444/wd/hub"
 
     with webdriver.Remote(command_executor=selen_url, options=chrome_options) as driver:
         wait = WebDriverWait(driver, 30)

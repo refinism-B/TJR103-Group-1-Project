@@ -28,7 +28,7 @@ def main():
     options.add_argument("--disable-software-rasterizer")
     options.add_argument("--disable-extensions")
 
-    selen_url = "http://35.194.236.122:4444/wd/hub"
+    selen_url = "http://35.194.236.122:14444/wd/hub"
 
     # 設定edge的driver
     with webdriver.Remote(command_executor=selen_url, options=options) as driver:
