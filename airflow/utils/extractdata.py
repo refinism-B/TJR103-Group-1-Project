@@ -389,45 +389,34 @@ def str_to_list(x: str) -> list:
         return [x]
 
 
-def to_phone(df: pd.DataFrame) -> pd.DataFrame:
-    import re
-
-    def fix_phone(x):
-        if x is None or pd.isna(x):
-            return None
-
-        # 浮點數（避免被 pandas 當成科學記號）
-        if isinstance(x, float):
-            x = str(int(x))
-
-        s = str(x).strip().lower()
-
-        if s in ("nan", "none", ""):
-            return None
-
-        # 移除所有非數字符號
-        digits = re.sub(r"\D", "", s)
-
-        if digits == "":
-            return None
-
-        # 處理 +886 手機
-        if digits.startswith("886") and len(digits) >= 11:
-            digits = "0" + digits[3:]
-
-        # 手機格式 (09xxxxxxxx)
-        if len(digits) == 10 and digits.startswith("09"):
-            return digits
-
-        # 市話（0 開頭 + 9–10 碼）
-        if digits.startswith("0") and len(digits) in (9, 10):
-            return digits
-
+def fix_phone(x):
+    if x is None or pd.isna(x):
         return None
 
-    df["phone"] = df["phone"].apply(fix_phone)
-    print(Fore.GREEN + "📞 電話欄位已轉換完成")
-    return df
+    # 若是 float，先用 int 去掉小數
+    if isinstance(x, float):
+        x = str(int(x))
+
+    s = str(x).strip()
+    s = re.sub(r"\D", "", s)  # 留數字
+
+    if s == "":
+        return None
+
+    # 若長度是 9 位，但本來應該是 10 位手機
+    # 代表 0 被吃掉 → 補回去
+    if len(s) == 9:
+        s = "0" + s
+
+    # 手機格式
+    if len(s) == 10 and s.startswith("09"):
+        return s
+
+    # 市話
+    if len(s) in (9, 10) and s.startswith("0"):
+        return s
+
+    return None
 
 
 def to_sql_null(x):

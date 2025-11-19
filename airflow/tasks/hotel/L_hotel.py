@@ -24,6 +24,10 @@ def main():
     # csv檔路徑
     df = rd.get_csv_data("/opt/airflow/data/complete/store/type=hotel/store.csv")
 
+    print("=== HOTEL RAW PHONE BEFORE ANY PROCESSING ===")
+    print(df["phone"].head(20))
+    print(df["phone"].isna().sum(), "/", len(df))
+
     df["phone"] = df["phone"].astype(str)
 
     # csv讀取後手機格式會跑掉，透過函式做轉換
