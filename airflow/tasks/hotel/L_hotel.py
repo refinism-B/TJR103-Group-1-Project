@@ -24,6 +24,8 @@ def main():
     # csv檔路徑
     df = rd.get_csv_data("/opt/airflow/data/complete/store/type=hotel/store.csv")
 
+    df["phone"] = df["phone"].astype(str)
+
     # csv讀取後手機格式會跑掉，透過函式做轉換
     df = ed.to_phone(df)
 
@@ -62,7 +64,7 @@ def main():
             );
             """
             clean_row = tuple(clean(v) for v in row)
-            count += cursor.execute(sql, clean_row) # pymysql以tuple傳送資料
+            count += cursor.execute(sql, clean_row)  # pymysql以tuple傳送資料
 
         # 提交資料
         conn.commit()

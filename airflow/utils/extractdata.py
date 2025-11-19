@@ -390,22 +390,43 @@ def str_to_list(x: str) -> list:
 
 
 def to_phone(df: pd.DataFrame) -> pd.DataFrame:
+    import re
+
     def fix_phone(x):
-        # 清除字串 "nan"、空白
-        if x is None:
+        if x is None or pd.isna(x):
             return None
+
+        # 浮點數（避免被 pandas 當成科學記號）
+        if isinstance(x, float):
+            x = str(int(x))
+
         s = str(x).strip().lower()
+
         if s in ("nan", "none", ""):
             return None
 
-        # 正常數字處理
-        if s.isdigit():
-            return f"0{int(s)}"
+        # 移除所有非數字符號
+        digits = re.sub(r"\D", "", s)
 
-        return None  # 非數字一律視為空值
+        if digits == "":
+            return None
+
+        # 處理 +886 手機
+        if digits.startswith("886") and len(digits) >= 11:
+            digits = "0" + digits[3:]
+
+        # 手機格式 (09xxxxxxxx)
+        if len(digits) == 10 and digits.startswith("09"):
+            return digits
+
+        # 市話（0 開頭 + 9–10 碼）
+        if digits.startswith("0") and len(digits) in (9, 10):
+            return digits
+
+        return None
 
     df["phone"] = df["phone"].apply(fix_phone)
-    print(Fore.GREEN + "✅ 手機格式已轉換完成")
+    print(Fore.GREEN + "📞 電話欄位已轉換完成")
     return df
 
 
