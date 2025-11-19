@@ -243,35 +243,32 @@ def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataF
     """與location資料merge，並只保留loc id"""
     df_loc = pd.DataFrame(df_loc)
     df_loc = df_loc[["loc_id", "city", "district"]]
-    # print(df_loc.head())
-    # print("-----------------------")
-    # print(df_main["city"])
-    # print("-----------------------")
-    # print(df_main["district"])
-    # print("-----------------------")
-    # print(f"df_main總筆數：{len(df_main)}")
-    # print("-----------------------")
+
+    # 先處理北區、南區，
+    # 臺南市北區704，臺南市南區702
+    # 臺中市北區404，臺中市南區402
+    city_code_dict = {"704": "臺南市", "702": "臺南市", "404": "臺中市", "402": "臺中市"}
+    mask = (df_main["district"].isin(["北區", "南區"])) & (df_main["city"].isna())
+    if mask.any():
+        city_code = df_main.loc[mask, "address"].str[:3]
+        city_fill = city_code.map(city_code_dict)
+        df_main.loc[mask, "city"] = city_fill
+        drop = mask & df_main["city"].isna()
+        df_main = df_main[~drop].reset_index(drop=True)
 
     # 第一次merge
     df_main = df_main.merge(df_loc, how="left", on=["city", "district"])
-    # print(df_main["loc_id"])
-    # print(df_main["loc_id"].isna().sum())
 
     # 取出loc id為空值，沒有市資料的索引
     miss_loc = df_main["loc_id"].isna()
-    print("-----------------------")
-    print(f"缺失loc_id的資料數：{miss_loc.sum()}")
-    print(f"df_main[miss_loc]：{len(df_main[miss_loc])}")
-    print(f"缺失的district：{df_main[miss_loc]["district"].tolist()}")
-    print(f"缺失的city：{df_main[miss_loc]["city"].tolist()}")
-    print(f"缺失的add：{df_main[miss_loc]["address"].tolist()}")
-    print("-----------------------")
 
     # 如果有則進行二次join
-    if len(miss_loc) != 0:
+    if miss_loc.any():
         df_miss = df_main[miss_loc].drop(columns="loc_id")
         df_miss = df_miss.merge(df_loc, how="left", on="district")
         df_main.loc[miss_loc, "loc_id"] = df_miss["loc_id"].values
+
+    df_main = df_main.dropna(subset=["loc_id"])
 
     df_main = df_main.drop(columns=["city", "district"])
 
