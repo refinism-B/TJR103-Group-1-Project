@@ -33,7 +33,7 @@ from tasks.population.T_pop import transform_population_data
 # 預設參數
 # ==========================================================
 default_args = {
-    "owner": "Ken",
+    "owner": "airflow",
     "depends_on_past": False,
     "email_on_failure": False,
     "email_on_retry": False,
@@ -51,7 +51,7 @@ with DAG(
     schedule="@monthly",  # 或 None, 或 cron 表達式
     start_date=datetime(2024, 12, 1),
     catchup=False,
-    tags=["population", "ETL", "monthly"],
+    tags=["517", "population", "monthly"],
 ) as dag:
 
     # --------------------------

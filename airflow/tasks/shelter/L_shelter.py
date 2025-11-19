@@ -40,7 +40,7 @@ def convert_nan_to_none(row):
 
 def load():
     # csv檔路徑
-    df = rd.get_csv_data("/opt/airflow/data/data/complete/store/type=shelter/store.csv")
+    df = rd.get_csv_data("/opt/airflow/data/complete/store/type=shelter/store.csv")
 
     # csv讀取後手機格式會跑掉，透過函式做轉換
     df = ed.to_phone(df)

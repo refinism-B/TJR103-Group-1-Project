@@ -218,12 +218,6 @@ def transform(df):
         "/opt/airflow/data/processed/shelter/shelter_data_cat_id.csv",
         "shelter",
     )
-    df = to_sql_data(df, "/opt/airflow/data/processed/shelter/shelter_data_sql.csv")
-
-    output_paths = "/opt/airflow/data/data/complete/store/type=shelter/store.csv"
-
-    os.makedirs(os.path.dirname(output_paths), exist_ok=True)
-    df.to_csv(output_paths, index=False, encoding="utf-8-sig")
-    print(f"📊 已輸出資料至：{output_paths}")
+    df = to_sql_data(df, "/opt/airflow/data/complete/store/type=shelter/store.csv")
 
     return df
