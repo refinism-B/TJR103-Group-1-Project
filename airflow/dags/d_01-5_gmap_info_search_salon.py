@@ -137,7 +137,7 @@ def d_01_5_gmap_info_search_salon():
         keyword_dict=keyword_dict)
 
     # 存檔至地端
-    dfm.L_save_file_to_csv_by_dict(
+    save = dfm.L_save_file_to_csv_by_dict(
         save_setting=finish_save_setting, df=df_main)
 
     # 存檔至mysql
@@ -157,6 +157,8 @@ def d_01_5_gmap_info_search_salon():
     # 印出比較結果
     gis.S_print_result(ori_count=origin_data_total,
                        finish_count=finish_data_total)
+
+    save >> gcs_setting
 
 
 d_01_5_gmap_info_search_salon()
