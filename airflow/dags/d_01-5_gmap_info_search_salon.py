@@ -137,13 +137,14 @@ def d_01_5_gmap_info_search_salon():
         keyword_dict=keyword_dict)
 
     # 存檔至地端
-    dfm.L_save_file_to_csv_by_dict(
+    save = dfm.L_save_file_to_csv_by_dict(
         save_setting=finish_save_setting, df=df_main)
 
+    # 存檔至mysql
+    dfm.L_truncate_and_upload_data_to_db(
+        df=df_main, table_keyword=keyword_dict)
+
     # 取得上傳GCS設定檔
-    """
-    目前設定路徑為test_data，正式時請改成正式路徑
-    """
     gcs_setting = gis.S_get_gcs_setting(
         keyword_dict=keyword_dict, local_save_setting=finish_save_setting)
 
@@ -156,6 +157,8 @@ def d_01_5_gmap_info_search_salon():
     # 印出比較結果
     gis.S_print_result(ori_count=origin_data_total,
                        finish_count=finish_data_total)
+
+    save >> gcs_setting
 
 
 d_01_5_gmap_info_search_salon()
