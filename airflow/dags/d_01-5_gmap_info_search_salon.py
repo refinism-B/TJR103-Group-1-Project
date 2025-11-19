@@ -140,10 +140,11 @@ def d_01_5_gmap_info_search_salon():
     dfm.L_save_file_to_csv_by_dict(
         save_setting=finish_save_setting, df=df_main)
 
+    # 存檔至mysql
+    dfm.L_truncate_and_upload_data_to_db(
+        df=df_main, table_keyword=keyword_dict)
+
     # 取得上傳GCS設定檔
-    """
-    目前設定路徑為test_data，正式時請改成正式路徑
-    """
     gcs_setting = gis.S_get_gcs_setting(
         keyword_dict=keyword_dict, local_save_setting=finish_save_setting)
 
