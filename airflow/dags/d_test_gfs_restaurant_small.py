@@ -20,21 +20,21 @@ default_args = {
 
 
 @dag(
-    dag_id="d_01-4_gmap_full_search_supplies",
+    dag_id="d_test_gfs_restaurant_small",
     default_args=default_args,
     description="[每月更新]透過經緯度爬取六都「寵物美容」列表",
     schedule_interval="0 10 15 * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "supplies", "google_API"]
+    tags=["bevis", "monthly", "restaurant", "google_API"]
 )
-def d_01_4_gmap_full_search_supplies():
+def d_test_gfs_restaurant_small():
 
     # 爬取的商店類型，若要修改則在此變更。
     # 0為寵物美容，1為寵物餐廳，2為寵物用品
     keyword_dict = gfs.S_get_keyword_dict(
-        dict_name=STORE_TYPE_ENG_CH_DICT, index=2)
+        dict_name=STORE_TYPE_ENG_CH_DICT, index=1)
 
     # 將六都及對應的字串名稱取出
     TPE_city_dict = gfs.S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=0)
@@ -62,18 +62,18 @@ def d_01_4_gmap_full_search_supplies():
         search_setting=search_setting, city_name=TPEI_city_dict["city_name"])
 
     # 正式使用gmap開始搜尋
-    TPE_result_dict = gfs.E_gmap_search(city_data=TPE_city_dict, keyword=keyword_dict,
-                                        search_setting=search_setting, loc_points=TPE_loc_points)
-    TYU_result_dict = gfs.E_gmap_search(city_data=TYU_city_dict, keyword=keyword_dict,
-                                        search_setting=search_setting, loc_points=TYU_loc_points)
-    TCH_result_dict = gfs.E_gmap_search(city_data=TCH_city_dict, keyword=keyword_dict,
-                                        search_setting=search_setting, loc_points=TCH_loc_points)
-    TNA_result_dict = gfs.E_gmap_search(city_data=TNA_city_dict, keyword=keyword_dict,
-                                        search_setting=search_setting, loc_points=TNA_loc_points)
-    KSH_result_dict = gfs.E_gmap_search(city_data=KSH_city_dict, keyword=keyword_dict,
-                                        search_setting=search_setting, loc_points=KSH_loc_points)
-    TPEI_result_dict = gfs.E_gmap_search(city_data=TPEI_city_dict, keyword=keyword_dict,
-                                         search_setting=search_setting, loc_points=TPEI_loc_points)
+    TPE_result_dict = gfs.E_gmap_search_small(city_data=TPE_city_dict, keyword=keyword_dict,
+                                              search_setting=search_setting, loc_points=TPE_loc_points)
+    TYU_result_dict = gfs.E_gmap_search_small(city_data=TYU_city_dict, keyword=keyword_dict,
+                                              search_setting=search_setting, loc_points=TYU_loc_points)
+    TCH_result_dict = gfs.E_gmap_search_small(city_data=TCH_city_dict, keyword=keyword_dict,
+                                              search_setting=search_setting, loc_points=TCH_loc_points)
+    TNA_result_dict = gfs.E_gmap_search_small(city_data=TNA_city_dict, keyword=keyword_dict,
+                                              search_setting=search_setting, loc_points=TNA_loc_points)
+    KSH_result_dict = gfs.E_gmap_search_small(city_data=KSH_city_dict, keyword=keyword_dict,
+                                              search_setting=search_setting, loc_points=KSH_loc_points)
+    TPEI_result_dict = gfs.E_gmap_search_small(city_data=TPEI_city_dict, keyword=keyword_dict,
+                                               search_setting=search_setting, loc_points=TPEI_loc_points)
 
     # 將搜尋結果轉換成六都df
     df_TPE = gfs.T_transform_to_df(result_dict=TPE_result_dict)
@@ -84,17 +84,17 @@ def d_01_4_gmap_full_search_supplies():
     df_TPEI = gfs.T_transform_to_df(result_dict=TPEI_result_dict)
 
     # 取得六都的存檔設定
-    TPE_save_setting = gfs.S_get_save_setting(
+    TPE_save_setting = gfs.S_get_save_setting_small(
         keyword_dict=keyword_dict, city_dict=TPE_city_dict)
-    TYU_save_setting = gfs.S_get_save_setting(
+    TYU_save_setting = gfs.S_get_save_setting_small(
         keyword_dict=keyword_dict, city_dict=TYU_city_dict)
-    TCH_save_setting = gfs.S_get_save_setting(
+    TCH_save_setting = gfs.S_get_save_setting_small(
         keyword_dict=keyword_dict, city_dict=TCH_city_dict)
-    TNA_save_setting = gfs.S_get_save_setting(
+    TNA_save_setting = gfs.S_get_save_setting_small(
         keyword_dict=keyword_dict, city_dict=TNA_city_dict)
-    KSH_save_setting = gfs.S_get_save_setting(
+    KSH_save_setting = gfs.S_get_save_setting_small(
         keyword_dict=keyword_dict, city_dict=KSH_city_dict)
-    TPEI_save_setting = gfs.S_get_save_setting(
+    TPEI_save_setting = gfs.S_get_save_setting_small(
         keyword_dict=keyword_dict, city_dict=TPEI_city_dict)
 
     # 將六都df存檔成csv
@@ -123,16 +123,11 @@ def d_01_4_gmap_full_search_supplies():
         df6=df_meta_TPEI)
 
     # 取得metadata存檔資訊
-    metadata_save_setting = gfs.S_get_metadata_save_setting()
+    metadata_save_setting = gfs.S_get_metadata_save_setting_small()
 
     # 將metadata的紀錄存檔成csv
-    save_meta_local = dfm.L_save_file_to_csv_by_dict(
+    dfm.L_save_file_to_csv_by_dict(
         save_setting=metadata_save_setting, df=df_metadata)
-
-    # 將metadata寫入資料庫
-    sql_meta = "INSERT INTO gmap_record (city, search_radius, step, coord_count, data_count, type, update_date) " \
-        "VALUES (%s, %s, %s, %s, %s, %s, %s)"
-    save_meta_db = dfm.L_upload_data_to_db(df=df_metadata, sql=sql_meta)
 
     # 簡單清理檔案
     # 去除place id重複資料
@@ -198,12 +193,11 @@ def d_01_4_gmap_full_search_supplies():
     df_main = gfs.T_add_update_date(df=df_main)
 
     # 取得存檔設定
-    main_save_setting = gfs.S_get_main_save_setting(keyword_dict=keyword_dict)
+    main_save_setting = gfs.S_get_main_save_setting_small(
+        keyword_dict=keyword_dict)
 
     # 存檔至地端
     dfm.L_save_file_to_csv_by_dict(save_setting=main_save_setting, df=df_main)
 
-    save_meta_local >> save_meta_db
 
-
-d_01_4_gmap_full_search_supplies()
+d_test_gfs_restaurant_small()

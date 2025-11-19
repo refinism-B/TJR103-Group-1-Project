@@ -39,10 +39,28 @@ def S_get_read_setting(keyword_dict: dict) -> dict:
 
 
 @task
+def S_get_read_setting_small(keyword_dict: dict) -> dict:
+    """設定讀取檔案的路徑資訊"""
+    folder = f"/opt/airflow/data/test/{keyword_dict['file_name']}"
+    file_name = f"{keyword_dict['file_name']}_place_id_small.csv"
+
+    return {"folder": folder, "file_name": file_name}
+
+
+@task
 def S_get_temp_save_setting(keyword_dict: dict) -> dict:
     """設定迴圈中的臨時存檔資訊"""
     folder = f"/opt/airflow/data/raw/{keyword_dict['file_name']}/info"
     file_name = f"{keyword_dict['file_name']}_temp.csv"
+
+    return {"folder": folder, "file_name": file_name}
+
+
+@task
+def S_get_temp_save_setting_small(keyword_dict: dict) -> dict:
+    """設定迴圈中的臨時存檔資訊"""
+    folder = f"/opt/airflow/data/test/{keyword_dict['file_name']}/info"
+    file_name = f"{keyword_dict['file_name']}_temp_small.csv"
 
     return {"folder": folder, "file_name": file_name}
 
@@ -106,8 +124,16 @@ def S_get_raw_info_save_setting(keyword_dict: dict) -> dict:
     folder = f"/opt/airflow/data/raw/{keyword_dict['file_name']}/info"
     file_name = f"{keyword_dict['file_name']}_info_raw.csv"
 
-    return {"folder": folder, "file_name": file_name}\
+    return {"folder": folder, "file_name": file_name}
 
+
+@task
+def S_get_raw_info_save_setting_small(keyword_dict: dict) -> dict:
+    """設定爬取的原始資料的存檔資訊"""
+    folder = f"/opt/airflow/data/testw/{keyword_dict['file_name']}/info"
+    file_name = f"{keyword_dict['file_name']}_info_raw_small.csv"
+
+    return {"folder": folder, "file_name": file_name}
 
 
 @task
@@ -290,7 +316,36 @@ def S_get_finish_save_setting(keyword_dict: dict) -> dict:
 
 
 @task
+def S_get_finish_save_setting_small(keyword_dict: dict) -> dict:
+    """取得完成檔的存檔資訊"""
+    file_date = date.today().strftime("%Y%m%d")
+    folder = f"/opt/airflow/data/test/store/type={keyword_dict['file_name']}"
+    file_name = "store_small.csv"
+
+    return {"folder": folder, "file_name": file_name}
+
+
+@task
 def S_get_gcs_setting(keyword_dict: dict, local_save_setting: dict) -> dict:
+    """取得上傳GCS的設定資訊"""
+    folder = Path(local_save_setting["folder"])
+    file_name = local_save_setting["file_name"]
+    path = str(folder / file_name)
+    keyword = keyword_dict['file_name']
+
+    bucket_name = "tjr103-1-project-bucket"
+    destination = f"data/complete/store/type={keyword}/store.csv"
+    source_file_name = path
+
+    return {
+        "bucket_name": bucket_name,
+        "destination": destination,
+        "source_file_name": source_file_name
+    }
+
+
+@task
+def S_get_gcs_setting_small(keyword_dict: dict, local_save_setting: dict) -> dict:
     """取得上傳GCS的設定資訊"""
     folder = Path(local_save_setting["folder"])
     file_name = local_save_setting["file_name"]
