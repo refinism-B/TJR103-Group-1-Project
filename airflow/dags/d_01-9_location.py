@@ -95,35 +95,35 @@ def d_01_9_location():
 
         return {"folder": folder, "file_name": file_name}
 
-    @task
-    def S_get_population_read_setting():
-        today = date.today()
-        if today.month == 1:
-            month = 12
-            year = today.year - 1
-        else:
-            month = today.month - 1
-            year = today.year
+    # @task
+    # def S_get_population_read_setting():
+    #     today = date.today()
+    #     if today.month == 1:
+    #         month = 12
+    #         year = today.year - 1
+    #     else:
+    #         month = today.month - 1
+    #         year = today.year
 
-        roc_year = str(int(year) - 1911)
-        month = str(month)
+    #     roc_year = str(int(year) - 1911)
+    #     month = str(month)
 
-        folder = "/opt/airflow/data/raw/population"
-        file_name = f"鄉鎮戶數及人口數-{roc_year}年{month}月.xls"
+    #     folder = "/opt/airflow/data/raw/population"
+    #     file_name = f"鄉鎮戶數及人口數-{roc_year}年{month}月.xls"
 
-        return {
-            "folder": folder,
-            "file_name": file_name
-        }
+    #     return {
+    #         "folder": folder,
+    #         "file_name": file_name
+    #     }
 
-    @task
-    def T_read_population_data(read_setting: dict) -> pd.DataFrame:
-        folder = Path(read_setting["folder"])
-        file_name = read_setting["file_name"]
-        path = folder / file_name
-        df = pd.read_excel(path)
+    # @task
+    # def T_read_population_data(read_setting: dict) -> pd.DataFrame:
+    #     folder = Path(read_setting["folder"])
+    #     file_name = read_setting["file_name"]
+    #     path = folder / file_name
+    #     df = pd.read_excel(path)
 
-        return df.to_dict(orient='records')
+    #     return df.to_dict(orient='records')
 
     @task
     def T_rename_population_columns(df: pd.DataFrame):
@@ -187,11 +187,12 @@ def d_01_9_location():
     # 先將raw存檔至地端
     dfm.L_save_file_to_csv_by_dict(save_setting=raw_save_setting, df=df_loc)
 
-    # 取得人口檔案讀取資訊
-    population_read_setting = S_get_population_read_setting()
+    # # 取得人口檔案讀取資訊
+    # population_read_setting = S_get_population_read_setting()
 
-    # 讀取人口資料檔案
-    df_popu = T_read_population_data(read_setting=population_read_setting)
+    # # 讀取人口資料檔案
+    # df_popu = T_read_population_data(read_setting=population_read_setting)
+    df_popu = dfm.E_load_from_sql(table_name="population_new")
 
     # 修改人口資料的欄位名
     df_popu = T_rename_population_columns(df=df_popu)
