@@ -217,7 +217,7 @@ def d_01_9_location():
     # value_str = pdm.S_get_columns_length_values(df=df_main)
 
     dfm.L_truncate_and_upload_data_to_db(
-        df=df_main, table_name="test_location")
+        df=df_main, table_name="location")
 
 
 d_01_9_location()
