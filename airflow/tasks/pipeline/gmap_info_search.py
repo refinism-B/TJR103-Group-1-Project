@@ -243,6 +243,11 @@ def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataF
     """與location資料merge，並只保留loc id"""
     df_loc = pd.DataFrame(df_loc)
     df_loc = df_loc[["loc_id", "city", "district"]]
+    print(df_loc.head())
+    print("-----------------------")
+    print(df_main["city"])
+    print("-----------------------")
+    print(df_main["district"])
 
     # 第一次merge
     df_main = df_main.merge(df_loc, how="left", on=["city", "district"])
@@ -250,7 +255,6 @@ def T_df_merge_location(df_main: pd.DataFrame, df_loc: pd.DataFrame) -> pd.DataF
     # 取出loc id為空值，沒有市資料的索引
     miss_loc = df_main["loc_id"].isna()
     print(f"缺失loc_id的資料數：{len(miss_loc)}")
-    print(df_main[miss_loc])
 
     # 如果有則進行二次join
     if len(miss_loc) != 0:
