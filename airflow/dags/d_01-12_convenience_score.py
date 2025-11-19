@@ -25,7 +25,7 @@ default_args = {
     dag_id="d_01-12_convenience_score",
     default_args=default_args,
     description="[每週]更新便利性指標報表",
-    schedule_interval="0 20 5 * *",
+    schedule_interval="0 10 * * 1",
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI

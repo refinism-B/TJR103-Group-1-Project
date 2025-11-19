@@ -7,6 +7,7 @@ from datetime import datetime, date, timedelta
 from utils.config import LOCATION_AREA_URL, LOCATION_AREA_COLUMNS, LOC_ID_STR, LOCATION_FINAL_COLUMNS, TAIWAN_CITY_LIST
 from tasks import pandas_mod as pdm
 from tasks import database_file_mod as dfm
+from pathlib import Path
 
 
 # 設定DAG基本資訊
@@ -116,6 +117,15 @@ def d_01_9_location():
         }
 
     @task
+    def T_read_population_data(read_setting: dict) -> pd.DataFrame:
+        folder = Path(read_setting["folder"])
+        file_name = read_setting["file_name"]
+        path = folder / file_name
+        df = pd.read_excel(path)
+
+        return df
+
+    @task
     def T_rename_population_columns(df: pd.DataFrame):
         columns = ["city", "district", "population"]
         df.columns = columns
@@ -179,8 +189,7 @@ def d_01_9_location():
     population_read_setting = S_get_population_read_setting()
 
     # 讀取人口資料檔案
-    df_popu = dfm.E_load_file_from_csv_by_dict(
-        read_setting=population_read_setting)
+    df_popu = T_read_population_data(read_setting=population_read_setting)
 
     # 修改人口資料的欄位名
     df_popu = T_rename_population_columns(df=df_popu)
