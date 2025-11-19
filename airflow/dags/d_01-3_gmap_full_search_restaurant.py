@@ -42,6 +42,7 @@ def d_01_3_gmap_full_search_restaurant():
     TCH_city_dict = gfs.S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=2)
     TNA_city_dict = gfs.S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=3)
     KSH_city_dict = gfs.S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=4)
+    TPEI_city_dict = gfs.S_get_city_data(dict_name=GSEARCH_CITY_CODE, index=5)
 
     # 設定搜尋參數：半徑與步長
     search_setting = gfs.S_search_setting(radius=3000, step=3000)
@@ -57,6 +58,8 @@ def d_01_3_gmap_full_search_restaurant():
         search_setting=search_setting, city_name=TNA_city_dict["city_name"])
     KSH_loc_points = gfs.S_set_loc_point(
         search_setting=search_setting, city_name=KSH_city_dict["city_name"])
+    TPEI_loc_points = gfs.S_set_loc_point(
+        search_setting=search_setting, city_name=TPEI_city_dict["city_name"])
 
     # 正式使用gmap開始搜尋
     TPE_result_dict = gfs.E_gmap_search(city_data=TPE_city_dict, keyword=keyword_dict,
@@ -69,6 +72,8 @@ def d_01_3_gmap_full_search_restaurant():
                                         search_setting=search_setting, loc_points=TNA_loc_points)
     KSH_result_dict = gfs.E_gmap_search(city_data=KSH_city_dict, keyword=keyword_dict,
                                         search_setting=search_setting, loc_points=KSH_loc_points)
+    TPEI_result_dict = gfs.E_gmap_search(city_data=TPEI_city_dict, keyword=keyword_dict,
+                                         search_setting=search_setting, loc_points=TPEI_loc_points)
 
     # 將搜尋結果轉換成六都df
     df_TPE = gfs.T_transform_to_df(result_dict=TPE_result_dict)
@@ -76,6 +81,7 @@ def d_01_3_gmap_full_search_restaurant():
     df_TCH = gfs.T_transform_to_df(result_dict=TCH_result_dict)
     df_TNA = gfs.T_transform_to_df(result_dict=TNA_result_dict)
     df_KSH = gfs.T_transform_to_df(result_dict=KSH_result_dict)
+    df_TPEI = gfs.T_transform_to_df(result_dict=TPEI_result_dict)
 
     # 取得六都的存檔設定
     TPE_save_setting = gfs.S_get_save_setting(
@@ -88,6 +94,8 @@ def d_01_3_gmap_full_search_restaurant():
         keyword_dict=keyword_dict, city_dict=TNA_city_dict)
     KSH_save_setting = gfs.S_get_save_setting(
         keyword_dict=keyword_dict, city_dict=KSH_city_dict)
+    TPEI_save_setting = gfs.S_get_save_setting(
+        keyword_dict=keyword_dict, city_dict=TPEI_city_dict)
 
     # 將六都df存檔成csv
     dfm.L_save_file_to_csv_by_dict(save_setting=TPE_save_setting, df=df_TPE)
@@ -95,6 +103,7 @@ def d_01_3_gmap_full_search_restaurant():
     dfm.L_save_file_to_csv_by_dict(save_setting=TCH_save_setting, df=df_TCH)
     dfm.L_save_file_to_csv_by_dict(save_setting=TNA_save_setting, df=df_TNA)
     dfm.L_save_file_to_csv_by_dict(save_setting=KSH_save_setting, df=df_KSH)
+    dfm.L_save_file_to_csv_by_dict(save_setting=TPEI_save_setting, df=df_TPEI)
 
     # 取得gmap的metadata紀錄並轉成df
     df_meta_TPE = gfs.T_transform_metadata_df(result_dict=TPE_result_dict)
@@ -102,21 +111,28 @@ def d_01_3_gmap_full_search_restaurant():
     df_meta_TCH = gfs.T_transform_metadata_df(result_dict=TCH_result_dict)
     df_meta_TNA = gfs.T_transform_metadata_df(result_dict=TNA_result_dict)
     df_meta_KSH = gfs.T_transform_metadata_df(result_dict=KSH_result_dict)
+    df_meta_TPEI = gfs.T_transform_metadata_df(result_dict=TPEI_result_dict)
 
     # 將metadata的df合併
-    df_metadata = pdm.T_combine_five_dataframe(
+    df_metadata = pdm.T_combine_six_dataframe(
         df1=df_meta_TPE,
         df2=df_meta_TYU,
         df3=df_meta_TCH,
         df4=df_meta_TNA,
-        df5=df_meta_KSH)
+        df5=df_meta_KSH,
+        df6=df_meta_TPEI)
 
     # 取得metadata存檔資訊
     metadata_save_setting = gfs.S_get_metadata_save_setting()
 
     # 將metadata的紀錄存檔成csv
-    dfm.L_save_file_to_csv_by_dict(
+    save_meta_local = dfm.L_save_file_to_csv_by_dict(
         save_setting=metadata_save_setting, df=df_metadata)
+
+    # 將metadata寫入資料庫
+    sql_meta = "INSERT INTO gmap_record (city, search_radius, step, coord_count, data_count, type, update_date) " \
+        "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    save_meta_db = dfm.L_upload_data_to_db(df=df_metadata, sql=sql_meta)
 
     # 簡單清理檔案
     # 去除place id重複資料
@@ -125,6 +141,7 @@ def d_01_3_gmap_full_search_restaurant():
     df_TCH = gfs.T_drop_duplicated(df=df_TCH)
     df_TNA = gfs.T_drop_duplicated(df=df_TNA)
     df_KSH = gfs.T_drop_duplicated(df=df_KSH)
+    df_TPEI = gfs.T_drop_duplicated(df=df_TPEI)
 
     # 去除非正常營業資料
     df_TPE = gfs.T_keep_operation_store(df=df_TPE)
@@ -132,6 +149,7 @@ def d_01_3_gmap_full_search_restaurant():
     df_TCH = gfs.T_keep_operation_store(df=df_TCH)
     df_TNA = gfs.T_keep_operation_store(df=df_TNA)
     df_KSH = gfs.T_keep_operation_store(df=df_KSH)
+    df_TPEI = gfs.T_keep_operation_store(df=df_TPEI)
 
     # 去除沒有地理資料的店家
     df_TPE = gfs.T_drop_no_geometry(df=df_TPE)
@@ -139,6 +157,7 @@ def d_01_3_gmap_full_search_restaurant():
     df_TCH = gfs.T_drop_no_geometry(df=df_TCH)
     df_TNA = gfs.T_drop_no_geometry(df=df_TNA)
     df_KSH = gfs.T_drop_no_geometry(df=df_KSH)
+    df_TPEI = gfs.T_drop_no_geometry(df=df_TPEI)
 
     # 根據地理資訊查詢是否真的在六都邊界內
     df_TPE = gfs.T_detect_in_boundary_or_not(
@@ -151,6 +170,8 @@ def d_01_3_gmap_full_search_restaurant():
         df=df_TNA, city_dict=TNA_city_dict)
     df_KSH = gfs.T_detect_in_boundary_or_not(
         df=df_KSH, city_dict=KSH_city_dict)
+    df_TPEI = gfs.T_detect_in_boundary_or_not(
+        df=df_KSH, city_dict=TPEI_city_dict)
 
     # 去除不在邊界內的資料
     df_TPE = gfs.T_drop_data_out_boundary(df=df_TPE)
@@ -158,14 +179,16 @@ def d_01_3_gmap_full_search_restaurant():
     df_TCH = gfs.T_drop_data_out_boundary(df=df_TCH)
     df_TNA = gfs.T_drop_data_out_boundary(df=df_TNA)
     df_KSH = gfs.T_drop_data_out_boundary(df=df_KSH)
+    df_TPEI = gfs.T_drop_data_out_boundary(df=df_TPEI)
 
     # 將五個df合併
-    df_main = pdm.T_combine_five_dataframe(
+    df_main = pdm.T_combine_six_dataframe(
         df1=df_TPE,
         df2=df_TYU,
         df3=df_TCH,
         df4=df_TNA,
-        df5=df_KSH
+        df5=df_KSH,
+        df6=df_TPEI
     )
 
     # 合併後再次去除重複place id資料
@@ -179,6 +202,8 @@ def d_01_3_gmap_full_search_restaurant():
 
     # 存檔至地端
     dfm.L_save_file_to_csv_by_dict(save_setting=main_save_setting, df=df_main)
+
+    save_meta_local >> save_meta_db
 
 
 d_01_3_gmap_full_search_restaurant()

@@ -124,6 +124,69 @@ def E_gmap_search(
     count = 1
 
     for loc in loc_points:
+        loc_p = Point(loc)
+        if geo_data.contains(loc_p):
+            lat = loc[1]
+            lon = loc[0]
+            result_list = gm.gmap_nearby_search(
+                key=key,
+                lat=lat,
+                lon=lon,
+                radius=search_setting["radius"],
+                keyword=keyword["keyword"]
+            )
+            data.extend(result_list)
+            print(
+                f"完成{city_data['city_name']}的{keyword['keyword']}的第{count}/{len(loc_points)}個座標點（{round(float(loc[1]), 7)}, {round(float(loc[0]), 7)}）的搜尋，共有{len(result_list)}筆店家資料")
+
+            df = pd.DataFrame(data=data)
+            df["update_time"] = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+
+            folder = Path(
+                f"/opt/airflow/data/raw/{keyword['file_name']}/temp")  # 容器路徑
+            folder.mkdir(parents=True, exist_ok=True)
+            file_name = f"{city_data['city_code']}_{keyword['file_name']}_temp.csv"
+            path = folder / file_name
+            df.to_csv(path, index=False, encoding="utf-8-sig")
+            count += 1
+            time.sleep(1.5)
+
+    metadata = {
+        "city": city_data["city_name"],
+        "search_radius": search_setting["radius"],
+        "step": search_setting["step"],
+        "coord_count": count,
+        "data_count": len(data),
+        "type": keyword["keyword"],
+        "update_date": date.today().strftime("%Y-%m-%d")
+    }
+
+    return {"data": data, "metadata": metadata}
+
+
+@task
+def E_gmap_search_small(
+    city_data: dict,
+    keyword: dict,
+    search_setting: dict,
+    loc_points: list,
+) -> dict:
+    """
+    輸入六都資料、關鍵字、搜尋設定和座標點列表，
+    使用gmap自動開始地理搜尋。
+    且只有在縣市邊界內的座標點會被搜尋。
+    同時會記錄搜尋次數、資料筆數、搜尋設定等，
+    作為下次搜尋設定的參考紀錄。
+    """
+
+    geo_data = S_get_city_geodata(city_name=city_data["city_name"])
+
+    load_dotenv()
+    data = []
+    key = os.environ.get("GMAP_KEY6")
+    count = 1
+
+    for loc in loc_points:
         if len(data) >= 5:
             break
 
@@ -161,7 +224,7 @@ def E_gmap_search(
         "coord_count": count,
         "data_count": len(data),
         "type": keyword["keyword"],
-        "update_date": date.today().strftime("%Y/%m/%d")
+        "update_date": date.today().strftime("%Y-%m-%d")
     }
 
     return {"data": data, "metadata": metadata}
@@ -194,11 +257,27 @@ def S_get_save_setting(keyword_dict: dict, city_dict: dict) -> dict:
     return {"folder": folder, "file_name": file_name}
 
 
+@task
+def S_get_save_setting_small(keyword_dict: dict, city_dict: dict) -> dict:
+    """取得存檔設定的dict"""
+    folder = f"/opt/airflow/data/test/{keyword_dict['file_name']}"
+    file_name = f"{city_dict['city_code']}_{keyword_dict['file_name']}_small.csv"
+    return {"folder": folder, "file_name": file_name}
+
+
 def S_get_metadata_save_setting() -> dict:
     """取得metadata的存檔設定dict"""
     file_date = date.today().strftime('%Y%m%d')
     folder = "/opt/airflow/data/complete/gmap_record"
     file_name = f"{file_date}_gmap_record.csv"
+    return {"folder": folder, "file_name": file_name}
+
+
+def S_get_metadata_save_setting_small() -> dict:
+    """取得metadata的存檔設定dict"""
+    file_date = date.today().strftime('%Y%m%d')
+    folder = "/opt/airflow/data/test/gmap_record"
+    file_name = f"{file_date}_gmap_record_small.csv"
     return {"folder": folder, "file_name": file_name}
 
 
@@ -288,5 +367,14 @@ def S_get_main_save_setting(keyword_dict: dict) -> dict:
     """設定主要檔案的存檔資訊"""
     folder = f"/opt/airflow/data/processed/{keyword_dict['file_name']}"
     file_name = f"{keyword_dict['file_name']}_place_id.csv"
+
+    return {"folder": folder, "file_name": file_name}
+
+
+@task
+def S_get_main_save_setting_small(keyword_dict: dict) -> dict:
+    """設定主要檔案的存檔資訊"""
+    folder = f"/opt/airflow/data/test/{keyword_dict['file_name']}"
+    file_name = f"{keyword_dict['file_name']}_place_id_small.csv"
 
     return {"folder": folder, "file_name": file_name}

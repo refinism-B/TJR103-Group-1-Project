@@ -23,30 +23,31 @@ default_args = {
 
 
 @dag(
-    dag_id="d_01-7_gmap_info_search_supplies",
+    dag_id="d_test_gis_restaurant_small",
     default_args=default_args,
     description="[每月更新][寵物用品]根據place id資料爬取店家詳細資料",
     schedule_interval="0 10 20 * *",
     start_date=datetime(2023, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "supplies", "google_API"]
+    tags=["bevis", "monthly", "restaurant", "google_API"]
 )
-def d_01_7_gmap_info_search_supplies():
+def d_test_gis_restaurant_small():
 
     # 先定義要執行的商店類別
     # 0為寵物美容、1為寵物餐廳、2為寵物用品
     keyword_dict = gis.S_get_keyword_dict(
-        dict_name=STORE_TYPE_ENG_CH_DICT, index=2)
+        dict_name=STORE_TYPE_ENG_CH_DICT, index=1)
 
     # 設定讀取路徑及檔案名
-    read_setting = gis.S_get_read_setting(keyword_dict=keyword_dict)
+    read_setting = gis.S_get_read_setting_small(keyword_dict=keyword_dict)
 
     # 將place id表讀入
     df_place = dfm.E_load_file_from_csv_by_dict(read_setting=read_setting)
 
     # 取得暫存檔存檔設定
-    temp_save_setting = gis.S_get_temp_save_setting(keyword_dict=keyword_dict)
+    temp_save_setting = gis.S_get_temp_save_setting_small(
+        keyword_dict=keyword_dict)
 
     # 開始gmap搜尋商店資訊
     df_search = gis.E_get_store_info_by_gmap(
@@ -59,7 +60,7 @@ def d_01_7_gmap_info_search_supplies():
     df_main = gis.T_merge_df(df1=df_place, df2=df_search)
 
     # 取得存檔設定
-    raw_save_setting = gis.S_get_raw_info_save_setting(
+    raw_save_setting = gis.S_get_raw_info_save_setting_small(
         keyword_dict=keyword_dict)
 
     # 先將爬取的raw data存檔
@@ -133,7 +134,7 @@ def d_01_7_gmap_info_search_supplies():
         df=df_main, new_cols=GMAP_INFO_SEARCH_FINAL_COLUMNS)
 
     # 設定存檔訊息
-    finish_save_setting = gis.S_get_finish_save_setting(
+    finish_save_setting = gis.S_get_finish_save_setting_small(
         keyword_dict=keyword_dict)
 
     # 存檔至地端
@@ -144,7 +145,7 @@ def d_01_7_gmap_info_search_supplies():
     """
     目前設定路徑為test_data，正式時請改成正式路徑
     """
-    gcs_setting = gis.S_get_gcs_setting(
+    gcs_setting = gis.S_get_gcs_setting_small(
         keyword_dict=keyword_dict, local_save_setting=finish_save_setting)
 
     # 上傳至GCS
@@ -160,4 +161,4 @@ def d_01_7_gmap_info_search_supplies():
     save >> gcs_setting
 
 
-d_01_7_gmap_info_search_supplies()
+d_test_gis_restaurant_small()
