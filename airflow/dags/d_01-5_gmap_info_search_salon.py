@@ -27,7 +27,7 @@ default_args = {
     default_args=default_args,
     description="[每月更新][寵物美容]根據place id資料爬取店家詳細資料",
     schedule_interval="0 4 16 * *",
-    start_date=datetime(2023, 1, 1),
+    start_date=datetime(2025, 12, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
     tags=["bevis", "monthly", "salon", "google_API", "16/4:00"]
