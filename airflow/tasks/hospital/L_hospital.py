@@ -9,6 +9,14 @@ from utils import extractdata as ed
 from utils import readdata as rd
 
 
+def clean(v):
+    if v is None:
+        return None
+    if isinstance(v, float) and pd.isna(v):
+        return None
+    return v
+
+
 def main():
     # 載入.env檔案
     load_dotenv()
@@ -53,7 +61,8 @@ def main():
                 %s, %s, %s, %s, %s, %s, %s, %s
             );
             """
-            count += cursor.execute(sql, tuple(row))  # pymysql以tuple傳送資料
+            clean_row = tuple(clean(v) for v in row)
+            count += cursor.execute(sql, clean_row)  # pymysql以tuple傳送資料
 
         # 提交資料
         conn.commit()

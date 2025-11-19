@@ -287,7 +287,7 @@ def cat_id(
 
     # 原本的df創立一個cat_id並賦值
     df["cat_id"] = df_cat["category_id"].iloc[0]
-    
+
     if category == "hospital":
         # 判斷168小時醫院並將cat_id變成7
         df.loc[df["opening_hours"] == 168, "cat_id"] = 7
@@ -390,18 +390,21 @@ def str_to_list(x: str) -> list:
 
 
 def to_phone(df: pd.DataFrame) -> pd.DataFrame:
-    """因為csv讀進來時，會將phone轉成數字格式
-    此函示可以將df裡面的phone欄位轉成電話格式
+    def fix_phone(x):
+        # 清除字串 "nan"、空白
+        if x is None:
+            return None
+        s = str(x).strip().lower()
+        if s in ("nan", "none", ""):
+            return None
 
-    Args:
-        df (pd.DataFrame): 要修正的df
+        # 正常數字處理
+        if s.isdigit():
+            return f"0{int(s)}"
 
-    Returns:
-        pd.DataFrame: 修正後的df
-    """
-    df["phone"] = df["phone"].apply(
-        lambda x: f"0{int(x)}" if pd.notna(x) and str(x).isdigit() else x
-    )
+        return None  # 非數字一律視為空值
+
+    df["phone"] = df["phone"].apply(fix_phone)
     print(Fore.GREEN + "✅ 手機格式已轉換完成")
     return df
 
