@@ -123,10 +123,12 @@ def d_01_9_location():
         path = folder / file_name
         df = pd.read_excel(path)
 
-        return df
+        return df.to_dict(orient='records')
 
     @task
     def T_rename_population_columns(df: pd.DataFrame):
+        df = pd.DataFrame(data=df)
+
         columns = ["city", "district", "population"]
         df.columns = columns
 
