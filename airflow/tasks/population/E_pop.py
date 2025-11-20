@@ -44,7 +44,9 @@ def fetch_population_data(raw_dir):
         print("🌐 開啟人口統計頁面...")
         driver.get("https://www.ris.gov.tw/app/portal/346")
 
-        wait.until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe")))
+        wait.until(
+            EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe"))
+        )
 
         # 點擊資料項目
         btn = wait.until(
@@ -82,13 +84,13 @@ def fetch_population_data(raw_dir):
         # ======= 等待下載完成 =======
         downloaded = None
         for _ in range(120):  # 最長 120 秒
-            files = [f for f in os.listdir(selenium_download_dir) if f.endswith(".xls")]
-            partials = [f for f in os.listdir(selenium_download_dir) if f.endswith(".crdownload")]
+            files = [f for f in os.listdir(raw_dir) if f.endswith(".xls")]
+            partials = [f for f in os.listdir(raw_dir) if f.endswith(".crdownload")]
 
             if files and not partials:
                 downloaded = max(
                     files,
-                    key=lambda f: os.path.getmtime(os.path.join(selenium_download_dir, f)),
+                    key=lambda f: os.path.getmtime(os.path.join(raw_dir, f)),
                 )
                 break
 
@@ -97,7 +99,7 @@ def fetch_population_data(raw_dir):
         if not downloaded:
             raise FileNotFoundError("❌ 未找到下載完成的 XLS 檔案")
 
-        src = os.path.join(selenium_download_dir, downloaded)
+        src = os.path.join(raw_dir, downloaded)
         dst = os.path.join(raw_dir, downloaded)
 
         # 移動到 Airflow 專案資料夾
