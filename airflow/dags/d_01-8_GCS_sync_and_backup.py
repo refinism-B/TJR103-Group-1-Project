@@ -57,7 +57,6 @@ def d_01_8_GCS_sync_and_backup():
 
     backup = gcs.T_backup_file(backup_setting=backup_setting)
 
-    """現在GCS路徑是測試路徑，正式上線需修改成正式路徑"""
     folder_setting = S_get_upload_folder_setting()
 
     gcs.L_upload_folder_to_gcs(folder_setting=folder_setting)

@@ -91,12 +91,7 @@ def d_01_10_compute_m():
         print(result["loc_id"])
 
         return result
-#
-#
-#
-#
-#
-#
+
     sql_stores = """
         select
             f.category_id,

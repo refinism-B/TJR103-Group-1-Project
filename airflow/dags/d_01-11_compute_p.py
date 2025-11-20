@@ -84,11 +84,7 @@ def d_01_11_compute_p():
         df_save["update_date"] = today
 
         return df_save
-#
-#
-#
-#
-#
+
     sql = """
     select
         loc_id,

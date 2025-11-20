@@ -143,11 +143,7 @@ def d_01_9_location():
             "folder": folder,
             "file_name": file_name
         }
-#
-#
-#
-#
-#
+
     # 取得location的序列化資料
     df_loc = E_get_location_area_data(url=LOCATION_AREA_URL)
 
