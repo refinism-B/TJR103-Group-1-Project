@@ -151,10 +151,10 @@ def split_city_district(area):
 #     return df
 
 
-# === 🆕 最終輸出路徑（store.csv） ===
+# === 🆕 最終輸出路徑（population.csv） ===
 FINAL_OUTPUT_DIR = "/opt/airflow/data/complete/population"
 os.makedirs(FINAL_OUTPUT_DIR, exist_ok=True)
-FINAL_OUTPUT_PATH = os.path.join(FINAL_OUTPUT_DIR, "store.csv")
+FINAL_OUTPUT_PATH = os.path.join(FINAL_OUTPUT_DIR, "population.csv")
 
 
 def transform_population_data(xls_path, latest_year=None, latest_month=None):
