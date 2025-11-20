@@ -152,7 +152,7 @@ def split_city_district(area):
 
 
 # === 🆕 最終輸出路徑（store.csv） ===
-FINAL_OUTPUT_DIR = "/opt/airflow/data/complete/store/type=population"
+FINAL_OUTPUT_DIR = "data/complete/population"
 os.makedirs(FINAL_OUTPUT_DIR, exist_ok=True)
 FINAL_OUTPUT_PATH = os.path.join(FINAL_OUTPUT_DIR, "store.csv")
 
