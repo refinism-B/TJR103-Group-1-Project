@@ -2,6 +2,7 @@
 import math
 import os
 
+import pandas as pd
 import pymysql
 from colorama import Fore
 from dotenv import load_dotenv
@@ -43,7 +44,9 @@ def load():
     df = rd.get_csv_data("/opt/airflow/data/complete/store/type=shelter/store.csv")
 
     # csv讀取後手機格式會跑掉，透過函式做轉換
-    df = ed.to_phone(df)
+    df["phone"] = df["phone"].apply(ed.to_phone)
+
+    df = df.astype(object).where(pd.notnull(df), None)
 
     # 避免空值
     for col in df.columns:
