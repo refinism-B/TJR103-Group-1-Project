@@ -81,7 +81,7 @@ with DAG(
         import pandas as pd
 
         df = pd.read_csv(
-            "/opt/airflow/data/processed/population/population.csv"
+            "/opt/airflow/data/complete/population/population.csv"
         )
 
         print("💾 [L] Load - 匯入 MySQL 中...")
