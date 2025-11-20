@@ -21,7 +21,7 @@ default_args = {
     dag_id="d_01-10_compute_m",
     default_args=default_args,
     description="[每日更新]計算m分數",
-    schedule_interval="0 20 5 * *",
+    schedule_interval="0 10 * * *",
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
@@ -30,6 +30,11 @@ default_args = {
 def d_01_10_compute_m():
     @task
     def T_calculate_P75(df_store: pd.DataFrame, df_stats: pd.DataFrame) -> pd.DataFrame:
+
+        # print(df_store["loc_id"])
+        print("-------------------------------")
+        print(df_stats["loc_id"])
+
         p75_district_cat = (
             df_store
             .groupby(["city", "district", "category_id"], as_index=False)["reviews"]
@@ -52,12 +57,16 @@ def d_01_10_compute_m():
             .merge(p75_city_cat, on=["city", "category_id"], how="left")
         )
 
+        print(merged["loc_id"])
+
         return merged
 
     @task
     def T_merged_fillna(df: pd.DataFrame) -> pd.DataFrame:
         df["p75_district_cat"] = df["p75_district_cat"].fillna(0)
         df["p75_city_cat"] = df["p75_city_cat"].fillna(0)
+
+        print(df["loc_id"])
 
         return df
 
@@ -73,8 +82,13 @@ def d_01_10_compute_m():
             (1 - df["w_district_cat"]) * df["p75_city_cat"]
         )
 
-        result = df[["city", "district", "category_id",
-                     "m_city_district_cat"]].copy()
+        result = df[["loc_id", "city", "district",
+                     "category_id", "m_city_district_cat"]].copy()
+
+        today = date.today()
+        result["update_date"] = today
+
+        print(result["loc_id"])
 
         return result
 #
@@ -98,9 +112,9 @@ def d_01_10_compute_m():
     df_store = pdm.T_transform_to_df(data=df_store_dict)
 
     sql_stats = """
-        SELECT
-            city, district, category_id, n_district_cat
-        FROM v_3district_cat_stats;
+        select
+            loc_id, city, district, category_id, n_district_cat
+        from v_3district_cat_stats;
         """
 
     df_stats_dict = dfm.E_query_from_sql(sql=sql_stats)
@@ -113,7 +127,7 @@ def d_01_10_compute_m():
     df_result = T_calculate_weight_and_mscore(df=df_merged, t=30)
 
     dfm.L_truncate_and_upload_data_to_db(
-        df=df_result, table_name="A_agg_district_cat_m")
+        df=df_result, table_name="A_4agg_district_cat_m")
 
 
 d_01_10_compute_m()
