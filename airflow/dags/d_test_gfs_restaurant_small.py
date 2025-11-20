@@ -24,7 +24,7 @@ default_args = {
     default_args=default_args,
     description="[每月更新]透過經緯度爬取六都「寵物美容」列表",
     schedule_interval="0 10 15 * *",
-    start_date=datetime(2023, 1, 1),
+    start_date=datetime(2025, 11, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
     tags=["bevis", "monthly", "restaurant", "google_API"]

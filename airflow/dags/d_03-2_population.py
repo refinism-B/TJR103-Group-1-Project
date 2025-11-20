@@ -1,23 +1,26 @@
 # d_03-2_population.py
 
 
+from tasks.population.T_pop import transform_population_data
+from tasks.population.L_pop import load
+from tasks.population.E_pop import fetch_raw_data
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
 import os
 import sys
 
 sys.path.append("/opt/airflow/tasks")
 sys.path.append("/opt/airflow/utils")
 sys.path.append("/opt/airflow/drivers")
-from datetime import datetime, timedelta
 
-from airflow.operators.python import PythonOperator
-
-from airflow import DAG
 
 # ==========================================================
 # 設定專案根目錄 (airflow 的上一層)
 # ==========================================================
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))  # airflow/ 的上一層
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(CURRENT_DIR, ".."))  # airflow/ 的上一層
 
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -25,9 +28,6 @@ if PROJECT_ROOT not in sys.path:
 # ==========================================================
 # 匯入人口 ETL 模組
 # ==========================================================
-from tasks.population.E_pop import fetch_raw_data
-from tasks.population.L_pop import load
-from tasks.population.T_pop import transform_population_data
 
 # ==========================================================
 # 預設參數
@@ -45,10 +45,10 @@ default_args = {
 # DAG 設定
 # ==========================================================
 with DAG(
-    dag_id="d03_2_population",
+    dag_id="d_03-2_population",
     description="Population ETL Pipeline (with MySQL location mapping)",
     default_args=default_args,
-    schedule="@monthly",  # 或 None, 或 cron 表達式
+    schedule="0 10 8 * *",  # 或 None, 或 cron 表達式
     start_date=datetime(2024, 12, 1),
     catchup=False,
     tags=["517", "population", "monthly"],
