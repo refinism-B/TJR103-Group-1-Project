@@ -35,17 +35,18 @@ default_args = {
 with DAG(
     dag_id="d_02-2_etl_hospital_dag",
     description="Hospital ETL pipeline (single-task wrapper)",
-    schedule_interval="@monthly",  # 每月執行
+    schedule_interval="0 16 16 * *",  # 每月執行
     start_date=datetime.now(),
     catchup=False,
     default_args=default_args,
-    tags=["hospital", "etl", "arthur", "monthly", "google_API"],
+    tags=["arthur", "monthly", "hospital", "etl", "google_API", "16/16:00"],
 ) as dag:
 
     # -------------------------------------
     # ✨ Step 3. 定義 Airflow 任務
     # -------------------------------------
-    extract = PythonOperator(task_id="extract", python_callable=E_hospital.main)
+    extract = PythonOperator(
+        task_id="extract", python_callable=E_hospital.main)
     t_c_d = PythonOperator(
         task_id="get_city_district", python_callable=T_hospital_c_d.main
     )
@@ -59,11 +60,13 @@ with DAG(
         task_id="clean_sort", python_callable=T_hospital_clean_sort.main
     )
     t_id = PythonOperator(task_id="add_id", python_callable=T_hospital_id.main)
-    t_merge = PythonOperator(task_id="merge", python_callable=T_hospital_merge.main)
+    t_merge = PythonOperator(
+        task_id="merge", python_callable=T_hospital_merge.main)
     t_cat_id = PythonOperator(
         task_id="get_cat_id", python_callable=T_hospital_cat_id.main
     )
-    t_sql = PythonOperator(task_id="final", python_callable=T_hospital_sql.main)
+    t_sql = PythonOperator(
+        task_id="final", python_callable=T_hospital_sql.main)
     load = PythonOperator(task_id="load", python_callable=L_hospital.main)
 
     # 定義依賴關係（按順序連接）

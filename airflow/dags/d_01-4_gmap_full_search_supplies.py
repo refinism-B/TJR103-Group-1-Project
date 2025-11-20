@@ -22,7 +22,7 @@ default_args = {
 @dag(
     dag_id="d_01-4_gmap_full_search_supplies",
     default_args=default_args,
-    description="[每月更新]透過經緯度爬取六都「寵物美容」列表",
+    description="[每月更新]透過經緯度爬取六都「寵物用品」列表",
     schedule_interval="0 12 15 * *",
     start_date=datetime(2025, 11, 1),
     catchup=False,
@@ -171,7 +171,7 @@ def d_01_4_gmap_full_search_supplies():
     df_KSH = gfs.T_detect_in_boundary_or_not(
         df=df_KSH, city_dict=KSH_city_dict)
     df_TPEI = gfs.T_detect_in_boundary_or_not(
-        df=df_KSH, city_dict=TPEI_city_dict)
+        df=df_TPEI, city_dict=TPEI_city_dict)
 
     # 去除不在邊界內的資料
     df_TPE = gfs.T_drop_data_out_boundary(df=df_TPE)

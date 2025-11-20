@@ -18,12 +18,12 @@ default_args = {
 @dag(
     dag_id="d_01-8_GCS_sync_and_backup",
     default_args=default_args,
-    description="[每日更新]備份GCS中的完成檔案",
-    schedule_interval="0 20 25 * *",
+    description="[每月更新]備份GCS中的完成檔案",
+    schedule_interval="0 10 20 * *",
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "GCS", "backup"]
+    tags=["bevis", "monthly", "GCS", "backup", "20/10:00"]
 )
 def d_01_8_GCS_sync_and_backup():
     @task

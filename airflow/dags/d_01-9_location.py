@@ -25,12 +25,12 @@ default_args = {
 @dag(
     dag_id="d_01-9_location",
     default_args=default_args,
-    description="[每日更新]抓取地區資料，並與人口資料合併",
-    schedule_interval="0 10 5 * *",
+    description="[每月更新]抓取地區資料，並與人口資料合併",
+    schedule_interval="0 10 10 * *",
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "location"]
+    tags=["bevis", "monthly", "location", "10/10:00"]
 )
 def d_01_9_location():
     @task
