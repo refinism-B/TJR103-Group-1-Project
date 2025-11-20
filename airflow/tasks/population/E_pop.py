@@ -99,11 +99,11 @@ def fetch_population_data(raw_dir):
         if not downloaded:
             raise FileNotFoundError("❌ 未找到下載完成的 XLS 檔案")
 
-        src = os.path.join(raw_dir, downloaded)
+        # src = os.path.join(raw_dir, downloaded)
         dst = os.path.join(raw_dir, downloaded)
 
-        # 移動到 Airflow 專案資料夾
-        os.replace(src, dst)
+        # # 移動到 Airflow 專案資料夾
+        # os.replace(src, dst)
 
         print(f"📁 完成下載：{dst}")
 
