@@ -16,7 +16,7 @@ def fetch_population_data(raw_dir):
 
     # === Container 統一路徑 ===
     selenium_download_dir = "/downloads"
-    os.makedirs(selenium_download_dir, exist_ok=True)
+    # os.makedirs(selenium_download_dir, exist_ok=True)
     os.makedirs(raw_dir, exist_ok=True)
 
     # === Chrome 選項設定 ===
