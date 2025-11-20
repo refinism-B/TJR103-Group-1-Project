@@ -45,7 +45,7 @@ with DAG(
     start_date=datetime(2024, 12, 1),
     catchup=False,
     default_args=default_args,
-    tags=["517", "shelter", "monthly", "google_API"],
+    tags=["517", "shelter", "monthly", "google_API", "15/14:00"],
 ) as dag:
 
     etl_shelter_task = PythonOperator(

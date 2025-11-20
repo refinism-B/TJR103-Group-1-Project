@@ -39,7 +39,7 @@ with DAG(
     start_date=datetime.now(),
     catchup=False,
     default_args=default_args,
-    tags=["arthur", "monthly", "hotel", "etl", "google_API"],
+    tags=["arthur", "monthly", "hotel", "etl", "google_API", "15/16:00"],
 ) as dag:
 
     # -------------------------------------

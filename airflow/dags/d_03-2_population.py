@@ -51,7 +51,7 @@ with DAG(
     schedule="0 10 8 * *",  # 或 None, 或 cron 表達式
     start_date=datetime(2024, 12, 1),
     catchup=False,
-    tags=["517", "population", "monthly"],
+    tags=["517", "population", "monthly", "8/10:00"],
 ) as dag:
 
     # --------------------------
