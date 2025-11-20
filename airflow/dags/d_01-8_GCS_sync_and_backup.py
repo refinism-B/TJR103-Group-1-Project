@@ -31,8 +31,8 @@ def d_01_8_GCS_sync_and_backup():
         """取得備份所需的路徑資訊"""
         file_date = date.today().strftime("%Y%m%d")
         bucket_name = "tjr103-1-project-bucket"
-        source_folder = "data/complete/store/"
-        destination_folder = f"data/backup/{file_date}_store/"
+        source_folder = "data/"
+        destination_folder = f"backup/{file_date}_data/"
 
         return {
             "bucket_name": bucket_name,
@@ -43,8 +43,8 @@ def d_01_8_GCS_sync_and_backup():
     @task
     def S_get_upload_folder_setting():
         """取得目標GCS的路徑資訊"""
-        source_folder = "/opt/airflow/data/complete/store"
-        destination_folder = "data/complete/store"
+        source_folder = "/opt/airflow/data"
+        destination_folder = "data"
         bucket_name = "tjr103-1-project-bucket"
 
         return {
