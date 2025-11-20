@@ -34,6 +34,7 @@ default_args = {
 def d_01_12_convenience_score():
     @task
     def T_add_city_id(df_data: pd.DataFrame) -> pd.DataFrame:
+        """加上city_id欄位，後續部分計算是基於「市」的分類"""
         df = pd.DataFrame(df_data)
         df = df.dropna(subset="loc_id")
         df["city_id"] = df["loc_id"].str[:3]
@@ -42,6 +43,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_w_area_cat(df: pd.DataFrame, t: int = 30) -> pd.DataFrame:
+        """計算w值"""
         df = pd.DataFrame(data=df)
 
         df[["loc_id", "category_id"]] = df[[
@@ -60,6 +62,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_P75_score(df: pd.DataFrame) -> pd.DataFrame:
+        """計算P75分數"""
         df = pd.DataFrame(data=df)
 
         # 計算P75_city_area_cat
@@ -80,6 +83,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_m_score(df: pd.DataFrame) -> pd.DataFrame:
+        """計算m值"""
         df = pd.DataFrame(data=df)
 
         # 計算m_city_area_cat
@@ -90,6 +94,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_rating_avg(df: pd.DataFrame) -> pd.DataFrame:
+        """計算各類、各區的平均評分"""
         df = pd.DataFrame(data=df)
 
         district_rating_avg = df.groupby(["loc_id", "category_id"])[
@@ -101,6 +106,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_avb_score(df: pd.DataFrame) -> pd.DataFrame:
+        """根據營業時數換算available分數"""
         df = pd.DataFrame(data=df)
 
         df["avb_score"] = ((df["op_hours"]/168)*0.5) + 0.5
@@ -109,6 +115,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_store_score(df: pd.DataFrame, new_col_sort: list) -> pd.DataFrame:
+        """計算單店家分數"""
         df = pd.DataFrame(data=df)
 
         df["store_score"] = (((df["rating"]/5) * (df["rating_total"]/(df["rating_total"]+df["m_city_area_cat"]))) + (
@@ -119,6 +126,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_pet_count(df: pd.DataFrame) -> pd.DataFrame:
+        """將各區的寵物數量加總計算"""
         df_pet_count = df.groupby("loc_id").agg(
             regis=("regis_count", "sum"),
             removal=("removal_count", "sum")
@@ -130,6 +138,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_category_raw_score(df_pet_count: pd.DataFrame, df_main: pd.DataFrame) -> pd.DataFrame:
+        """計算各區類別的raw分數"""
         df_main = pd.DataFrame(data=df_main)
 
         sum_store_score = df_main.groupby(["loc_id", "category_id"])[
@@ -167,6 +176,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_get_normalize_score(df: pd.DataFrame, col_list: list, col_name: str) -> pd.DataFrame:
+        """計算各區各類的標準化分數，並分為市內比較及全國比較"""
         df_copy = pd.DataFrame(df)
 
         group = df_copy.groupby(col_list)["category_raw_score"]
@@ -180,6 +190,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_merge_city_and_all(df_city: pd.DataFrame, df_all: pd.DataFrame) -> pd.DataFrame:
+        """將市內和全國比較的標準化分數合併"""
         df_city = pd.DataFrame(data=df_city)
         df_all = pd.DataFrame(data=df_all)
 
@@ -191,6 +202,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_category_score(df: pd.DataFrame, weighted_dict: dict) -> pd.DataFrame:
+        """計算各區的類別分數"""
         df = pd.DataFrame(data=df)
 
         df["category_city_score"] = df["norm_city"] * \
@@ -202,6 +214,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_city_all_score(df: pd.DataFrame) -> pd.DataFrame:
+        """計算各區市內和全國比較的總分"""
         df = pd.DataFrame(data=df)
 
         df_city_score = df.groupby(
@@ -215,6 +228,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_calculate_final_score(df: pd.DataFrame) -> pd.DataFrame:
+        """以市內比較7:全國比較3的比重加總得到最終分數"""
         df = pd.DataFrame(data=df)
 
         df["final_score"] = (df["city_score"]*0.7) + (df["all_score"]*0.3)
@@ -223,6 +237,7 @@ def d_01_12_convenience_score():
 
     @task
     def T_transform_final_to_10(df: pd.DataFrame, new_col: list) -> pd.DataFrame:
+        """將最終分數映射回0-10分"""
         df = pd.DataFrame(data=df)
 
         df["final_score_10"] = df["final_score"] * (10/9.5)
@@ -234,6 +249,7 @@ def d_01_12_convenience_score():
 
     @task
     def S_get_store_score_save_setting():
+        """取得單店分數總表的存檔位置"""
         folder = "/opt/airflow/data/complete/analysis"
         file_name = "store_score.csv"
 
@@ -244,7 +260,7 @@ def d_01_12_convenience_score():
 
     @task
     def S_get_store_score_gcs_setting(local_save_setting: dict):
-        """取得上傳至GCS所需的路徑資訊"""
+        """取得單店分數總表上傳至GCS所需的路徑資訊"""
         folder = Path(local_save_setting["folder"])
         file_name = local_save_setting["file_name"]
         path = folder / file_name
@@ -261,6 +277,7 @@ def d_01_12_convenience_score():
 
     @task
     def S_get_convenience_score_save_setting():
+        """取得便利性分數報表的存檔位置"""
         folder = "/opt/airflow/data/complete/analysis"
         file_name = "convenience_score.csv"
 
@@ -271,7 +288,7 @@ def d_01_12_convenience_score():
 
     @task
     def S_get_convenience_score_gcs_setting(local_save_setting: dict):
-        """取得上傳至GCS所需的路徑資訊"""
+        """取得便利性分數報表上傳至GCS所需的路徑資訊"""
         folder = Path(local_save_setting["folder"])
         file_name = local_save_setting["file_name"]
         path = folder / file_name
@@ -285,13 +302,8 @@ def d_01_12_convenience_score():
             "destination": destination,
             "source_file_name": source_file_name
         }
-#
-#
-#
-#
-#
-#
-        # 前置作業：先把所有店家表格讀入，並合併成主表
+
+    # 前置作業：先把所有店家表格讀入，並合併成主表
     data_salon = dfm.E_load_from_sql(table_name="salon")
     df_salon = pdm.T_transform_to_df(data=data_salon)
 
