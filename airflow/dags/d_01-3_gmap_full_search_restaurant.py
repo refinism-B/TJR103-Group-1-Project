@@ -171,7 +171,7 @@ def d_01_3_gmap_full_search_restaurant():
     df_KSH = gfs.T_detect_in_boundary_or_not(
         df=df_KSH, city_dict=KSH_city_dict)
     df_TPEI = gfs.T_detect_in_boundary_or_not(
-        df=df_KSH, city_dict=TPEI_city_dict)
+        df=df_TPEI, city_dict=TPEI_city_dict)
 
     # 去除不在邊界內的資料
     df_TPE = gfs.T_drop_data_out_boundary(df=df_TPE)
