@@ -10,7 +10,7 @@ os.makedirs(RAW_DIR, exist_ok=True)
 RAW_PATH = os.path.join(RAW_DIR, "shelter_raw.csv")
 
 # 農業部動物收容所資料（官方 OpenData API）
-MOA_API_URL = "https://data.moa.gov.tw/Service/OpenData/AnimalsShelter.aspx"
+MOA_API_URL = "https://data.moa.gov.tw/Service/OpenData/TransService.aspx?UnitId=2thVboChxuKs"
 
 
 

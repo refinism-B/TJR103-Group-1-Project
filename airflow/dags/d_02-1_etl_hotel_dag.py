@@ -35,11 +35,11 @@ default_args = {
 with DAG(
     dag_id="d_02-1_etl_hotel_dag",
     description="Hotel ETL pipeline (single-task wrapper)",
-    schedule_interval="@monthly",  # 每月執行
+    schedule_interval="0 16 15 * *",  # 每月執行
     start_date=datetime.now(),
     catchup=False,
     default_args=default_args,
-    tags=["hotel", "etl", "arthur", "monthly", "google_API"],
+    tags=["arthur", "monthly", "hotel", "etl", "google_API", "15/16:00"],
 ) as dag:
 
     # -------------------------------------
@@ -59,8 +59,10 @@ with DAG(
         task_id="clean_sort", python_callable=T_hotel_clean_sort.main
     )
     t_id = PythonOperator(task_id="add_id", python_callable=T_hotel_id.main)
-    t_merge = PythonOperator(task_id="merge", python_callable=T_hotel_merge.main)
-    t_cat_id = PythonOperator(task_id="get_cat_id", python_callable=T_hotel_cat_id.main)
+    t_merge = PythonOperator(
+        task_id="merge", python_callable=T_hotel_merge.main)
+    t_cat_id = PythonOperator(task_id="get_cat_id",
+                              python_callable=T_hotel_cat_id.main)
     t_sql = PythonOperator(task_id="final", python_callable=T_hotel_sql.main)
     load = PythonOperator(task_id="load", python_callable=L_hotel.main)
 

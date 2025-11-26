@@ -7,6 +7,7 @@ from datetime import datetime, date, timedelta
 from utils.config import LOCATION_AREA_URL, LOCATION_AREA_COLUMNS, LOC_ID_STR, LOCATION_FINAL_COLUMNS, TAIWAN_CITY_LIST
 from tasks import pandas_mod as pdm
 from tasks import database_file_mod as dfm
+from pathlib import Path
 
 
 # 設定DAG基本資訊
@@ -24,16 +25,17 @@ default_args = {
 @dag(
     dag_id="d_01-9_location",
     default_args=default_args,
-    description="[每日更新]抓取地區資料，並與人口資料合併",
-    schedule_interval="0 20 5 * *",
+    description="[每月更新]抓取地區資料，並與人口資料合併",
+    schedule_interval="0 10 10 * *",
     start_date=datetime(2025, 1, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "location"]
+    tags=["bevis", "monthly", "location", "10/10:00"]
 )
 def d_01_9_location():
     @task
     def E_get_location_area_data(url: str) -> pd.DataFrame:
+        """下載地理資料檔案，並做簡單清理"""
         res = requests.get(url=url)
         excel_data = BytesIO(res.content)
         df = pd.read_excel(excel_data)
@@ -56,6 +58,7 @@ def d_01_9_location():
 
     @task
     def T_add_city_columns(df: pd.DataFrame, city_list: list) -> pd.DataFrame:
+        """將「市」資料加上"""
         city_index = []
         for city in city_list:
             idx = df.index[df["location"] == city].tolist()
@@ -72,6 +75,7 @@ def d_01_9_location():
 
     @task
     def T_adjust_columns(df: pd.DataFrame) -> pd.DataFrame:
+        """調整欄位名稱及順序"""
         new_columns = ["district", "area", "city"]
         df.columns = new_columns
 
@@ -82,6 +86,7 @@ def d_01_9_location():
 
     @task
     def T_round_area_column(df: pd.DataFrame) -> pd.DataFrame:
+        """將面積數值取到小數點後三位"""
         df["area"] = df["area"].apply(float)
         df["area"] = df["area"].round(3)
 
@@ -89,28 +94,17 @@ def d_01_9_location():
 
     @task
     def L_location_raw_save_setting():
+        """先將location的檔案進行儲存"""
         folder = "/opt/airflow/data/raw/location"
         file_name = "location_raw.csv"
 
         return {"folder": folder, "file_name": file_name}
 
-    ############################################################
-    """
-    尚未設定人口檔案路徑
-    """
-    ############################################################
-    @task
-    def S_get_population_read_setting():
-        folder = "/opt/airflow/data/processed/population"
-        file_name = "raw_population.csv"
-
-        return {
-            "folder": folder,
-            "file_name": file_name
-        }
-
     @task
     def T_rename_population_columns(df: pd.DataFrame):
+        """將population的資料欄位重新命名"""
+        df = pd.DataFrame(data=df)
+
         columns = ["city", "district", "population"]
         df.columns = columns
 
@@ -120,12 +114,14 @@ def d_01_9_location():
 
     @task
     def T_merge_df_loc_and_population(df_loc: pd.DataFrame, df_popu: pd.DataFrame) -> pd.DataFrame:
+        """將地區和人口資料merge"""
         df_main = df_loc.merge(df_popu, how="left", on=["city", "district"])
 
         return df_main
 
     @task
     def T_add_loc_id(df: pd.DataFrame, city_dict: dict) -> pd.DataFrame:
+        """加上loc_id欄位"""
         df = df.dropna(subset="population")
 
         df["code"] = df["city"].map(city_dict)
@@ -139,6 +135,7 @@ def d_01_9_location():
 
     @task
     def S_get_location_save_setting():
+        """取得location最終存檔位置"""
         folder = "/opt/airflow/data/complete/location"
         file_name = "location.csv"
 
@@ -146,11 +143,7 @@ def d_01_9_location():
             "folder": folder,
             "file_name": file_name
         }
-#
-#
-#
-#
-#
+
     # 取得location的序列化資料
     df_loc = E_get_location_area_data(url=LOCATION_AREA_URL)
 
@@ -169,12 +162,9 @@ def d_01_9_location():
     # 先將raw存檔至地端
     dfm.L_save_file_to_csv_by_dict(save_setting=raw_save_setting, df=df_loc)
 
-    # 取得人口檔案讀取資訊
-    population_read_setting = S_get_population_read_setting()
-
-    # 讀取人口資料檔案
-    df_popu = dfm.E_load_file_from_csv_by_dict(
-        read_setting=population_read_setting)
+    # # 讀取人口資料檔案
+    # df_popu = T_read_population_data(read_setting=population_read_setting)
+    df_popu = dfm.E_load_from_sql(table_name="population_new")
 
     # 修改人口資料的欄位名
     df_popu = T_rename_population_columns(df=df_popu)
@@ -195,11 +185,8 @@ def d_01_9_location():
     dfm.L_save_file_to_csv_by_dict(df=df_main, save_setting=final_save_setting)
 
     # 上傳至資料庫
-    # col_str = pdm.S_get_columns_str(df=df_main)
-    # value_str = pdm.S_get_columns_length_values(df=df_main)
-
     dfm.L_truncate_and_upload_data_to_db(
-        df=df_main, table_name="test_location")
+        df=df_main, table_name="location")
 
 
 d_01_9_location()

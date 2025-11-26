@@ -13,7 +13,7 @@ def get_engine():
     username = os.getenv("MYSQL_USERNAME")
     password = os.getenv("MYSQL_PASSWORD")
     target_ip = os.getenv("MYSQL_IP")
-    target_port = os.getenv("MYSQL_PORT")
+    target_port = int(os.getenv("MYSQL_PORTT"))
     db_name = os.getenv("MYSQL_DB_NAME")
     return create_engine(
         f"mysql+pymysql://{username}:{password}@{target_ip}:{target_port}/{db_name}",
@@ -27,7 +27,7 @@ def get_conn():
         user=os.getenv("MYSQL_USERNAME"),
         password=os.getenv("MYSQL_PASSWORD"),
         database=os.getenv("MYSQL_DB_NAME"),
-        port=int(os.getenv("MYSQL_PORT")),
+        port=int(os.getenv("MYSQL_PORTT")),
         charset="utf8mb4"
     )
 
@@ -59,13 +59,6 @@ PROCESSED_PATH = os.path.join(PROCESSED_DIR, "population_processed.csv")
 # === 主 Load 函式 ===
 def load(df: pd.DataFrame):
     print("💾 [L] Load Population - 開始匯出與匯入...")
-
-    # === 輸出 CSV（給 Airflow or Debug）===
-    print(f"📦 RAW 輸出至：{RAW_PATH}")
-    df.to_csv(RAW_PATH, index=False, encoding="utf-8-sig")
-
-    print(f"📦 Processed 輸出至：{PROCESSED_PATH}")
-    df.to_csv(PROCESSED_PATH, index=False, encoding="utf-8-sig")
 
     # === 準備寫入 population_new ===
     engine = get_engine()

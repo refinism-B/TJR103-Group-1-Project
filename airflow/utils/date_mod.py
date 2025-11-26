@@ -140,4 +140,3 @@ def trans_op_time_to_hours(op_time: Iterable) -> int | float:
     # 第五種情況：輸入為列表（最原本狀態）
     if is_iterable:
         return list_converter(op_time)
-        return list_converter(op_time)

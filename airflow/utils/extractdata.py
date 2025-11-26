@@ -146,7 +146,6 @@ def clean_sort(df: pd.DataFrame, save_path: str):
         "district",
         "business_status",
         "opening_hours",
-        "types",
         "rating",
         "rating_total",
         "longitude",
@@ -161,7 +160,7 @@ def clean_sort(df: pd.DataFrame, save_path: str):
     # 修改opening_hours欄位
     # ------------------------------------------------------------
     # csv讀進來時list會被轉成字串，所以先將str轉成list
-    df_merged["opening_hours"] = df_merged["opening_hours"].apply(str_to_list)
+    # df_merged["opening_hours"] = df_merged["opening_hours"].apply(str_to_list)
     df_merged.loc[:, "opening_hours"] = df_merged["opening_hours"].apply(
         dm.trans_op_time_to_hours
     )
@@ -288,7 +287,7 @@ def cat_id(
 
     # 原本的df創立一個cat_id並賦值
     df["cat_id"] = df_cat["category_id"].iloc[0]
-    
+
     if category == "hospital":
         # 判斷168小時醫院並將cat_id變成7
         df.loc[df["opening_hours"] == 168, "cat_id"] = 7
@@ -306,7 +305,6 @@ def cat_id(
         "business_status",
         "opening_hours",
         "cat_id",
-        "types",
         "rating",
         "rating_total",
         "longitude",
@@ -391,21 +389,34 @@ def str_to_list(x: str) -> list:
         return [x]
 
 
-def to_phone(df: pd.DataFrame) -> pd.DataFrame:
-    """因為csv讀進來時，會將phone轉成數字格式
-    此函示可以將df裡面的phone欄位轉成電話格式
+def to_phone(x):
+    if x is None or pd.isna(x):
+        return None
 
-    Args:
-        df (pd.DataFrame): 要修正的df
+    # 若是 float，先用 int 去掉小數
+    if isinstance(x, float):
+        x = str(int(x))
 
-    Returns:
-        pd.DataFrame: 修正後的df
-    """
-    df["phone"] = df["phone"].apply(
-        lambda x: f"0{int(x)}" if pd.notna(x) and str(x).isdigit() else x
-    )
-    print(Fore.GREEN + "✅ 手機格式已轉換完成")
-    return df
+    s = str(x).strip()
+    s = re.sub(r"\D", "", s)  # 留數字
+
+    if s == "":
+        return None
+
+    # 若長度是 9 位，但本來應該是 10 位手機
+    # 代表 0 被吃掉 → 補回去
+    if len(s) == 9:
+        s = "0" + s
+
+    # 手機格式
+    if len(s) == 10 and s.startswith("09"):
+        return s
+
+    # 市話
+    if len(s) in (9, 10) and s.startswith("0"):
+        return s
+
+    return None
 
 
 def to_sql_null(x):

@@ -80,7 +80,8 @@ GSEARCH_CITY_CODE = {
     "桃園市": "TYU",
     "臺中市": "TCH",
     "臺南市": "TNA",
-    "高雄市": "KSH"
+    "高雄市": "KSH",
+    "臺北市": "TPEI"
 }
 
 
@@ -112,7 +113,10 @@ WORDS_REPLACE_FROM_ADDRESS = {
     "中壢市": "中壢區",
     "省": "",
     "萬裏": "萬里",
-    "區區": "區"
+    "區區": "區",
+    "台南": "臺南",
+    "台北": "臺北",
+    "台中": "臺中"
 }
 
 # 在店家資訊的標題（店名）中隱含關閉、不提供服務的字樣，將其從資料中去除
@@ -189,3 +193,34 @@ TAIWAN_CITY_LIST = ['新北市',
                     '連江縣',
                     '東沙群島',
                     '南沙群島']
+
+
+# 計算便利性指標設定
+# 單店分數的最終欄位
+STORE_STORE_COLUMNS = [
+    'id', 'name', 'buss_status', 'loc_id', 'city_id', 'category_id', 'address', 'phone', 'op_hours',
+    'rating', 'rating_total', 'newest_review', 'longitude',
+    'latitude', 'map_url', 'website', 'place_id', 'update_time',
+    'store_count', 'w_area_cat', 'P75_district_rating_total',
+    'P75_city_rating_total', 'm_city_area_cat', 'district_rating_avg',
+    'avb_score', 'store_score'
+]
+
+# 便利性分數的最終欄位
+CONVENIENCE_SCORE_COLUMNS = [
+    'loc_id', 'city_id', 'category_id', 'regis', 'removal', 'pet_count',
+    'sum_store_score', 'category_raw_score', 'norm_city', 'norm_all',
+    'category_city_score', 'category_all_score', 'city_score', 'all_score',
+    'final_score', 'final_score_10'
+]
+
+# 計算final score時各類別權重
+CATEGORY_WEIGHTED_DICT = {
+    "1": 0.27,
+    "2": 0.09,
+    "3": 0.11,
+    "4": 0.15,
+    "5": 0.13,
+    "6": 0.03,
+    "7": 0.22
+}

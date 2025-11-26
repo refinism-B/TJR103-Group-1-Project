@@ -6,6 +6,7 @@ from airflow.decorators import task
 import pymysql
 from tasks import pandas_mod as pdm
 from typing import Optional
+import numpy as np
 
 
 """
@@ -49,6 +50,8 @@ def L_save_file_to_csv_by_dict(save_setting: dict, df: pd.DataFrame):
     提供"save_setting"的存檔設定dict，抓取其中的"folder"和"file_name"
     資料，自動將df存檔成csv檔案。
     """
+
+    df = pd.DataFrame(data=df)
 
     try:
         folder = Path(save_setting["folder"])
@@ -171,6 +174,10 @@ def L_truncate_and_upload_data_to_db(df: pd.DataFrame, table_keyword: Optional[d
     else:
         raise TypeError("請定義table名稱！")
 
+    df = pd.DataFrame(data=df)
+    df = df.where(pd.notnull(df), None)
+    df = df.replace({np.nan: None})
+
     col_str = pdm.S_get_columns_str(df=df)
 
     value_str = pdm.S_get_columns_length_values(df=df)
@@ -194,8 +201,8 @@ def L_truncate_and_upload_data_to_db(df: pd.DataFrame, table_keyword: Optional[d
         conn.commit()
         print("資料寫入資料庫成功！")
     except Exception as e:
-        print(f"資料寫入資料庫時發生錯誤：{e}")
         conn.rollback()
+        raise Exception(f"資料寫入資料庫時發生錯誤：{e}")
     finally:
         conn.close()
 

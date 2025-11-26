@@ -135,7 +135,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+# .env
 .envrc
 .venv
 env/
@@ -210,7 +210,7 @@ __marimo__/
 # data/*
 # !data/.gitkeep
 
-/airflow/utils/.env
+# /airflow/utils/.env
 /airflow/data
 /.vscode/
 /.env
