@@ -6,13 +6,19 @@
 
 import pandas as pd
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
+import os
+from datetime import date
 
-#建立 mysql 連線
-user = "sonia"
-password = "pet88888"
-host = "35.194.236.122"
-port = 3306
-database = "TJR103_1"
+load_dotenv()
+
+# mysql連線設定
+user = os.getenv("MYSQL_USERNAME")
+password = os.getenv("MYSQL_PASSWORD")
+host = os.getenv("MYSQL_IP")
+port = int(os.getenv("MYSQL_PORTT"))
+database = os.getenv("MYSQL_DB_NAME")
+
 
 engine = create_engine(
     f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}?charset=utf8mb4"
@@ -73,6 +79,9 @@ df["norm_metro"] = df["norm_metro"].round(2)
 # copy準備寫回mysql
 out_cols = ["loc_id", "city", "district", "category_id", "category_raw_score", "norm_city", "norm_metro"]
 out_df = df[out_cols].copy()
+
+today = date.today()
+out_df["update_date"] = today
 
 # 存回category_score_norm
 with engine.begin() as conn:

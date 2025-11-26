@@ -23,14 +23,14 @@ default_args = {
 
 
 @dag(
-    dag_id="d_01-7_gmap_info_search_supplies_test",
+    dag_id="d_01-7_gmap_info_search_supplies",
     default_args=default_args,
     description="[每月更新][寵物用品]根據place id資料爬取店家詳細資料",
-    schedule_interval="0 10 20 * *",
-    start_date=datetime(2023, 1, 1),
+    schedule_interval="0 12 16 * *",
+    start_date=datetime(2025, 11, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "supplies", "google_API"]
+    tags=["bevis", "monthly", "supplies", "google_API", "16/12:00"]
 )
 def d_01_7_gmap_info_search_supplies():
 
@@ -140,10 +140,11 @@ def d_01_7_gmap_info_search_supplies():
     save = dfm.L_save_file_to_csv_by_dict(
         save_setting=finish_save_setting, df=df_main)
 
+    # 存檔至mysql
+    dfm.L_truncate_and_upload_data_to_db(
+        df=df_main, table_keyword=keyword_dict)
+
     # 取得上傳GCS設定檔
-    """
-    目前設定路徑為test_data，正式時請改成正式路徑
-    """
     gcs_setting = gis.S_get_gcs_setting(
         keyword_dict=keyword_dict, local_save_setting=finish_save_setting)
 

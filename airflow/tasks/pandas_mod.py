@@ -97,6 +97,21 @@ def T_combine_six_dataframe(
 
 
 @task
+def T_combine_six_dataframe_out_dict(
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    df3: pd.DataFrame,
+    df4: pd.DataFrame,
+    df5: pd.DataFrame,
+    df6: pd.DataFrame,
+) -> pd.DataFrame:
+    """concat六個dataframe"""
+    df_combine = pd.concat([df1, df2, df3, df4, df5, df6], ignore_index=True)
+
+    return df_combine.to_dict(orient='records')
+
+
+@task
 def T_combine_five_dataframe(
     df1: pd.DataFrame,
     df2: pd.DataFrame,

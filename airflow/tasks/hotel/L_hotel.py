@@ -1,5 +1,6 @@
 import os
 
+import pandas as pd
 import pymysql
 from colorama import Fore
 from dotenv import load_dotenv
@@ -8,15 +9,29 @@ from utils import extractdata as ed
 from utils import readdata as rd
 
 
+def clean(v):
+    if v is None:
+        return None
+    if isinstance(v, float) and pd.isna(v):
+        return None
+    return v
+
+
 def main():
     # 載入.env檔案
     load_dotenv()
 
     # csv檔路徑
-    df = rd.get_csv_data("/opt/airflow/data/data/complete/store/type=hotel/store.csv")
+    df = rd.get_csv_data("/opt/airflow/data/complete/store/type=hotel/store.csv")
+
+    print("=== HOTEL RAW PHONE BEFORE ANY PROCESSING ===")
+    print(df["phone"].head(20))
+    print(df["phone"].isna().sum(), "/", len(df))
 
     # csv讀取後手機格式會跑掉，透過函式做轉換
-    df = ed.to_phone(df)
+    df["phone"] = df["phone"].apply(ed.to_phone)
+
+    df = df.astype(object).where(pd.notnull(df), None)
 
     # 避免空值
     for col in df.columns:
@@ -50,7 +65,8 @@ def main():
                 %s, %s, %s, %s, %s, %s, %s, %s
             );
             """
-            count += cursor.execute(sql, tuple(row))  # pymysql以tuple傳送資料
+            clean_row = tuple(clean(v) for v in row)
+            count += cursor.execute(sql, clean_row)  # pymysql以tuple傳送資料
 
         # 提交資料
         conn.commit()

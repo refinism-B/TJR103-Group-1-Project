@@ -20,8 +20,8 @@ default_args = {
     dag_id="d_01-11_compute_p",
     default_args=default_args,
     description="[每日更新]計算p分數",
-    schedule_interval="0 20 5 * *",
-    start_date=datetime(2025, 1, 1),
+    schedule_interval="0 11 * * *",
+    start_date=datetime(2025, 11, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
     tags=["sonia", "bevis", "monthly", "analyze"]
@@ -34,6 +34,8 @@ def d_01_11_compute_p():
         df = df.dropna(subset=["city", "district", "category_id"])
         df["category_id"] = df["category_id"].astype(int)
         df["category_raw_score"] = df["category_raw_score"].fillna(0.0)
+
+        return df
 
     def normalize_series(x: pd.Series, p10: pd.Series, p90: pd.Series) -> pd.Series:
         """
@@ -76,14 +78,13 @@ def d_01_11_compute_p():
 
     @task
     def T_select_columns(df: pd.DataFrame, col_list: list) -> pd.DataFrame:
+        today = date.today()
+
         df_save = df[col_list]
+        df_save["update_date"] = today
 
         return df_save
-#
-#
-#
-#
-#
+
     sql = """
     select
         loc_id,
@@ -105,6 +106,9 @@ def d_01_11_compute_p():
     col_list = ["loc_id", "city", "district", "category_id",
                 "category_raw_score", "norm_city", "norm_metro"]
     df_save = T_select_columns(df=df, col_list=col_list)
+
+    dfm.L_truncate_and_upload_data_to_db(
+        df=df_save, table_name="A_7category_score_norm")
 
 
 d_01_11_compute_p()

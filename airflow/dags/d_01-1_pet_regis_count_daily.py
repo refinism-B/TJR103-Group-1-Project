@@ -173,8 +173,6 @@ def d_01_1_pet_regis_count_daily():
             "source_file_name": source_file_name
         }
 
-    """程式正式開始"""
-
     # 取得六都與代碼對照表
     city_dict = cfg.CITY_NAME_CODE_DICT
 

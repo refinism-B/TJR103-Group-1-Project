@@ -32,11 +32,13 @@ def exist_or_not(folder, file):
 
 
 def reassign_id(df, id_col_name, id_str):
-    """根據原有最後一筆資料進行自動延續編號
+    """
+    根據原有最後一筆資料進行自動延續編號
     對於未編號的資料，需要先建立id欄位並且賦予空字串
     df請輸入想要增加編號的df
     id_col_name請輸入id的「欄位名」
-    id_str請輸入編號的「前綴字串」"""
+    id_str請輸入編號的「前綴字串」
+    """
 
     # 先找出原本的id編號（id欄位非空）最大值
     nums = df.loc[df[id_col_name] != "",
