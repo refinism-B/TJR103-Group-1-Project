@@ -136,6 +136,10 @@ def clean_sort(df: pd.DataFrame, save_path: str):
     df_merged[fillna_columns] = df_merged[fillna_columns].fillna(0)
     print(Fore.GREEN + "✅ Columns have been sorted and fill the missing value.")
 
+    df_merged = df_merged[
+        df_merged["address_checked"].str.contains(".*市.*區", regex=True)
+    ]
+
     # 修改columns順序
     revised_columns = [
         "place_id",
