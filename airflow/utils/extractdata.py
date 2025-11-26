@@ -136,8 +136,18 @@ def clean_sort(df: pd.DataFrame, save_path: str):
     df_merged[fillna_columns] = df_merged[fillna_columns].fillna(0)
     print(Fore.GREEN + "✅ Columns have been sorted and fill the missing value.")
 
+    # 去除掉placed_id抓到非六都的資料
     df_merged = df_merged[
         df_merged["address_checked"].str.contains(".*市.*區", regex=True)
+    ]
+
+    # 取得新地址的市與區
+    df_merged["city_new"], df_merged["district_new"] = zip(
+        *df_merged["address_checked"].apply(extract_city_district)
+    )
+    df_merged = df_merged[
+        (df_merged["city_new"] == df_merged["city"])
+        & (df_merged["district_new"] == df_merged["district"])
     ]
 
     # 修改columns順序
@@ -146,8 +156,8 @@ def clean_sort(df: pd.DataFrame, save_path: str):
         "name_checked",
         "address_checked",
         "phone",
-        "city",
-        "district",
+        "city_new",
+        "district_new",
         "business_status",
         "opening_hours",
         "rating",
