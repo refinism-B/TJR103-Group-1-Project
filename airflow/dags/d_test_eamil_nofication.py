@@ -21,7 +21,7 @@ default_args = {
     start_date=datetime(2025, 11, 1),
     catchup=False,
     # Optional: Add tags for better filtering in the UI
-    tags=["bevis", "monthly", "restaurant", "google_API"]
+    tags=["test"]
 )
 def d_test_eamil_nofication():
     @task
