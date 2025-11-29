@@ -1,0 +1,50 @@
+name: 手動部署至 GCP VM (CD Only)
+
+# 觸發方式：手動觸發 GitHub Actions
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '選擇使用 main 分支部署'
+        required: true
+        default: 'main'
+
+# 執行步驟
+jobs:
+  deploy:
+    name: 部署到 VM
+    runs-on: ubuntu-latest
+
+    steps:
+    # 取得最新程式碼
+    - name: 取得最新程式碼
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch }}
+
+    # 設定 SSH 連線設定
+    - name: 執行部署指令
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        # 取得SSH連線資訊
+        host: ${{ secrets.SSH_VM_IP }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+
+        # 步驟 3: 部署腳本 (在 GCP VM 上執行的指令)
+        script: |
+          echo "--- 開始更新程式碼 ---"
+          
+          # 定義專案路徑
+          DEPLOY_PATH="/home/${{ secrets.SSH_USERNAME }}/project/TJR103-Group-1-Project"
+
+          # 1. 進入專案目錄
+          cd ${DEPLOY_PATH}
+          echo "進入目錄: ${DEPLOY_PATH}"
+          
+          # 2. pull更新程式碼
+          git pull origin ${{ github.event.inputs.branch }}
+          echo "程式碼更新完成."
+
+          echo "--- 部署成功完成 ---"
