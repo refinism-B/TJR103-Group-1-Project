@@ -194,3 +194,38 @@ def S_get_columns_length_values(df: pd.DataFrame) -> str:
     value_str = ", ".join(value_list)
 
     return value_str
+
+
+@task
+def T_dynamic_combine_df(df_list: list[pd.DataFrame]) -> list:
+    df_list = list(df_list)
+
+    df_list1 = df_list[::2]
+    df_list2 = df_list[1::2]
+    df_pairs = list(zip(df_list1, df_list2))
+
+    df_list = []
+    for pair in df_pairs:
+        df_combine = pd.concat([pair[0], pair[1]], ignore_index=True)
+        df_list.append(df_combine)
+
+    return df_list
+
+
+@task
+def T_combine_df_list(df_list: list[pd.DataFrame]) -> pd.DataFrame:
+    df_main = pd.concat(df_list, ignore_index=True)
+
+    return df_main
+
+
+@task
+def L_print_df(df: pd.DataFrame):
+    print(df)
+
+
+@task
+def T_zip_two_data(list1, list2):
+    data_pairs = zip(list1, list2)
+
+    return list(data_pairs)

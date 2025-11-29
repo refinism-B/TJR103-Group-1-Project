@@ -33,4 +33,4 @@ def d_test_eamil_nofication():
     run = failure_trigger()
 
 
-d_test_eamil_nofication()
+# d_test_eamil_nofication()

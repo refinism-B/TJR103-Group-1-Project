@@ -161,4 +161,4 @@ def d_test_gis_restaurant_small():
     save >> gcs_setting
 
 
-d_test_gis_restaurant_small()
+# d_test_gis_restaurant_small()
