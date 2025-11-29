@@ -11,8 +11,8 @@ from tasks.pipeline import gmap_full_search as gfs
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    "email": ["your_email@example.com"],
-    "email_on_failure": False,
+    "email": ["add412@gmail.com"],
+    "email_on_failure": True,
     "email_on_retry": False,
     "retries": 2,
     "retry_delay": timedelta(minutes=1),

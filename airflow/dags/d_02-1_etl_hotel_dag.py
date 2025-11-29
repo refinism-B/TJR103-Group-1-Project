@@ -24,8 +24,8 @@ default_args = {
     "depends_on_past": False,
     "retries": 1,
     "retry_delay": timedelta(minutes=3),
-    "email": ["your_email@example.com"],
-    "email_on_failure": False,
+    "email": ["add412@gmail.com"],
+    "email_on_failure": True,
     "email_on_retry": False,
 }
 
